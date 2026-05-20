@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VividCall • Premium Video Meetings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+   
+</head>
+<body class="bg-[#0f172a] text-white font-['Inter'] min-h-screen selection:bg-purple-500 selection:text-white">
+
+    <!-- NAVBAR -->
+    <nav class="bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('landing')">
+                <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg shadow-purple-500/20">V</div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">VividCall</h1>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+                <a href="#" onclick="navigate('landing')" id="nav-home" class="nav-link nav-active py-2 transition-all">Home</a>
+                <a href="#" onclick="navigate('features')" id="nav-features" class="nav-link py-2 transition-all">Features</a>
+                <a href="#" onclick="navigate('pricing')" id="nav-pricing" class="nav-link py-2 transition-all">Pricing</a>
+                <a href="#" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-link py-2 transition-all">Dashboard</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="toggleDarkMode()" class="text-xl px-3 py-2 text-slate-400 hover:text-white transition">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <button onclick="showPage('login')" class="px-5 py-2 border border-slate-700 hover:border-slate-500 rounded-full hover:bg-slate-800 transition text-sm font-medium">Login</button>
+                <button onclick="showPage('signup')" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-full font-semibold transition text-sm shadow-lg shadow-blue-600/20">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- LANDING PAGE (DETAILED HOME) -->
+    <div id="landing" class="page">
+        <!-- Hero Section -->
+        <section class="relative min-h-[90vh] flex items-center justify-center bg-gradient-to-br from-[#13113c] via-[#0f172a] to-[#0f243a] overflow-hidden pt-12 pb-20">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.1),transparent_45%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.08),transparent_50%)]"></div>
+            
+            <div class="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-10">
+                <!-- Live Tag -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-semibold mb-8 uppercase tracking-wider mx-auto">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Next-Gen WebRTC Video Architecture
+                </div>
+
+                <h1 class="text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-6 bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                    The Most Beautiful<br><span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Video Calling Experience</span>
+                </h1>
+                
+                <p class="text-lg md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 font-light leading-relaxed">
+                    Ultra-low latency audio and crystal clear 4K video meets intuitive design. Built from scratch for modern scaling teams and seamless collaboration.
+                </p>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+                    <button onclick="startInstantMeeting()" 
+                            class="w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-lg font-semibold rounded-2xl flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 shadow-xl shadow-blue-600/20 group">
+                        <i class="fa-solid fa-video group-hover:scale-110 transition"></i> Start Instant Meeting
+                    </button>
+                    <button onclick="navigate('dashboard')" 
+                            class="w-full sm:w-auto px-10 py-5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-lg font-semibold rounded-2xl flex items-center justify-center gap-3 transition-all text-slate-200">
+                        <i class="fa-solid fa-calendar-days text-slate-400"></i> Go to Dashboard
+                    </button>
+                </div>
+
+                <!-- Trust Metrics / Live Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-8 glass rounded-3xl max-w-4xl mx-auto backdrop-blur-md">
+                    <div>
+                        <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">99.99%</div>
+                        <div class="text-xs md:text-sm text-slate-400 mt-1">Uptime SLA</div>
+                    </div>
+                    <div class="border-l border-slate-800">
+                        <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">&lt; 45ms</div>
+                        <div class="text-xs md:text-sm text-slate-400 mt-1">Global Latency</div>
+                    </div>
+                    <div class="border-l border-slate-800">
+                        <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">E2EE</div>
+                        <div class="text-xs md:text-sm text-slate-400 mt-1">End-to-End Security</div>
+                    </div>
+                    <div class="border-l border-slate-800">
+                        <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">4K UHD</div>
+                        <div class="text-xs md:text-sm text-slate-400 mt-1">Adaptive Max Resolution</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deep Details Section -->
+        <section class="py-24 bg-[#0a0f1d] border-t border-slate-900">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="text-center max-w-3xl mx-auto mb-20">
+                    <h2 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Why Teams Choose VividCall</h2>
+                    <p class="text-slate-400 text-lg">Engineered with modern WebRTC media servers to bypass congested routing, delivering flawless calls even on unstable 3G/4G networks.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Feature Detail 1 -->
+                    <div class="glass p-8 rounded-3xl feature-card border border-slate-800">
+                        <div class="w-14 h-14 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-3">Adaptive Bitrate Stream</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            VividCall dynamically reads your current bandwidth every milisecond. If network drops, it prioritizes clear audio and crystal-clear presentation layout instantly.
+                        </p>
+                    </div>
+
+                    <!-- Feature Detail 2 -->
+                    <div class="glass p-8 rounded-3xl feature-card border border-slate-800">
+                        <div class="w-14 h-14 bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-3">DTLS/SRTP Encryption</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Security is embedded by design. Audio, video, and text channel packet streams are encrypted directly inside the native browser level so nobody can intercept your meetings.
+                        </p>
+                    </div>
+
+                    <!-- Feature Detail 3 -->
+                    <div class="glass p-8 rounded-3xl feature-card border border-slate-800">
+                        <div class="w-14 h-14 bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 rounded-2xl flex items-center justify-center text-2xl mb-6">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold mb-3">AI DeepNoise Filter</h3>
+                        <p class="text-slate-400 leading-relaxed text-sm">
+                            Children crying, keyboard clicking, or street noise is blocked effortlessly. Our real-time localized neural acoustic filter isolates absolute speech frequencies cleanly.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Workflow Walkthrough (How It Works) -->
+        <section class="py-24 bg-[#0f172a] relative">
+            <div class="max-w-7xl mx-auto px-6 md:px-12">
+                <div class="text-center max-w-2xl mx-auto mb-16">
+                    <h2 class="text-4xl font-bold mb-4">Host Meetings in 3 Steps</h2>
+                    <p class="text-slate-400">No complex client installations, bloated exe files, or tedious plug-ins required.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-12 relative">
+                    <div class="relative text-center md:text-left">
+                        <div class="text-6xl font-black text-slate-800 mb-4">01</div>
+                        <h4 class="text-xl font-bold mb-2">Create Meeting Link</h4>
+                        <p class="text-slate-400 text-sm">Click "Start Instant Meeting" inside your system dashboard to spin up a secure containerized session room token instantly.</p>
+                    </div>
+                    <div class="relative text-center md:text-left">
+                        <div class="text-6xl font-black text-slate-800 mb-4">02</div>
+                        <h4 class="text-xl font-bold mb-2">Invite Participants</h4>
+                        <p class="text-slate-400 text-sm">Copy your auto-generated secure room hash URI string code and forward it via Slack, WhatsApp, or standard Email protocols.</p>
+                    </div>
+                    <div class="relative text-center md:text-left">
+                        <div class="text-6xl font-black text-slate-800 mb-4">03</div>
+                        <h4 class="text-xl font-bold mb-2">Collaborate Fluidly</h4>
+                        <p class="text-slate-400 text-sm">Share monitors, broadcast 4K slideshow pitches, communicate through integrated panels with no timing constraints on Premium plans.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="py-24 bg-[#070b14]">
+            <div class="max-w-4xl mx-auto px-6">
+                <h2 class="text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+                <div class="space-y-4">
+                    <div class="p-6 glass rounded-2xl">
+                        <h4 class="text-lg font-semibold mb-2">Do I need external browser plugins?</h4>
+                        <p class="text-slate-400 text-sm">No. VividCall leverages pure modern standard WebRTC protocols supported natively on Chrome, Safari, Firefox, Edge, and iOS/Android mobile engines.</p>
+                    </div>
+                    <div class="p-6 glass rounded-2xl">
+                        <h4 class="text-lg font-semibold mb-2">How many active speakers can be tracked?</h4>
+                        <p class="text-slate-400 text-sm">Our automated smart SFU media cluster scales up to 100 simultaneous video grids dynamically highlighting the top active speaker in real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- FEATURES PAGE -->
+    <div id="features" class="page hidden py-20 bg-[#0f172a]">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <h2 class="text-5xl font-bold text-center mb-16">Powerful Features</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass p-8 rounded-3xl feature-card">
+                    <i class="fa-solid fa-video text-5xl text-blue-500 mb-6"></i>
+                    <h3 class="text-2xl font-semibold mb-3">4K Ultra HD Video</h3>
+                    <p class="text-slate-400">Crystal clear video with adaptive streaming.</p>
+                </div>
+                <div class="glass p-8 rounded-3xl feature-card">
+                    <i class="fa-solid fa-microphone-slash text-5xl text-purple-500 mb-6"></i>
+                    <h3 class="text-2xl font-semibold mb-3">AI Noise Cancellation</h3>
+                    <p class="text-slate-400">Advanced AI removes background noise instantly.</p>
+                </div>
+                <div class="glass p-8 rounded-3xl feature-card">
+                    <i class="fa-solid fa-closed-captioning text-5xl text-cyan-500 mb-6"></i>
+                    <h3 class="text-2xl font-semibold mb-3">Live Captions</h3>
+                    <p class="text-slate-400">Real-time AI transcription in multiple languages.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICING PAGE -->
+    <div id="pricing" class="page hidden py-20 bg-[#0f172a]">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <h2 class="text-5xl font-bold text-center mb-4">Simple, Transparent Pricing</h2>
+            <p class="text-center text-slate-400 mb-16">Choose the plan that fits your team</p>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Free -->
+                <div class="glass rounded-3xl p-10">
+                    <h3 class="text-2xl font-semibold">Free</h3>
+                    <div class="text-6xl font-bold my-6">$0<span class="text-xl font-normal">/mo</span></div>
+                    <ul class="space-y-4 text-slate-300">
+                        <li>✓ 40 min meetings</li>
+                        <li>✓ Up to 10 participants</li>
+                        <li>✓ Basic AI features</li>
+                        <li>✓ Screen Sharing</li>
+                    </ul>
+                    <button onclick="showPage('signup')" class="w-full mt-10 py-4 border rounded-3xl hover:bg-slate-800 transition">Get Started</button>
+                </div>
+                
+                <!-- Pro -->
+                <div class="glass border-2 border-purple-500 rounded-3xl p-10 relative">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-purple-600 px-6 py-1 rounded-full text-sm font-medium">Most Popular</div>
+                    <h3 class="text-2xl font-semibold">Pro</h3>
+                    <div class="text-6xl font-bold my-6">$12<span class="text-xl font-normal">/mo</span></div>
+                    <ul class="space-y-4 text-slate-300">
+                        <li>✓ Unlimited meeting duration</li>
+                        <li>✓ Up to 100 participants</li>
+                        <li>✓ Advanced AI + Recording</li>
+                        <li>✓ Team Admin Controls</li>
+                    </ul>
+                    <button onclick="showPage('signup')" class="w-full mt-10 py-4 bg-purple-600 hover:bg-purple-500 rounded-3xl font-semibold transition">Start Pro Trial</button>
+                </div>
+                
+                <!-- Enterprise -->
+                <div class="glass rounded-3xl p-10">
+                    <h3 class="text-2xl font-semibold">Enterprise</h3>
+                    <div class="text-6xl font-bold my-6">Custom</div>
+                    <ul class="space-y-4 text-slate-300">
+                        <li>✓ Everything in Pro</li>
+                        <li>✓ Unlimited Participants</li>
+                        <li>✓ SSO & Dedicated Support</li>
+                    </ul>
+                    <button class="w-full mt-10 py-4 border rounded-3xl hover:bg-slate-800 transition">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="page hidden flex h-screen bg-[#0b0f19]">
+        <!-- Sidebar -->
+        <div class="w-72 bg-[#111827] border-r border-slate-800 p-6 flex flex-col">
+            <div class="flex items-center gap-3 mb-12 cursor-pointer" onclick="navigate('landing')">
+                <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl font-bold">V</div>
+                <span class="text-2xl font-bold">VividCall</span>
+            </div>
+            
+            <nav class="space-y-2 flex-1">
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl bg-[#312e81] text-white cursor-pointer transition"><i class="fa-solid fa-house"></i> Dashboard</a>
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition"><i class="fa-solid fa-calendar"></i> Schedule Meeting</a>
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition"><i class="fa-solid fa-users"></i> Team</a>
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition"><i class="fa-solid fa-video"></i> Recordings</a>
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition"><i class="fa-solid fa-chart-bar"></i> Analytics</a>
+                <a onclick="setActive(this)" class="flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition"><i class="fa-solid fa-gear"></i> Settings</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto p-8">
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-4xl font-semibold">Good Evening, Muhammad 👋</h1>
+                <div class="text-sm text-slate-400 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">Account Role: Super Admin</div>
+            </div>
+            
+            <div class="flex flex-wrap gap-4 mb-12">
+                <button onclick="startInstantMeeting()" 
+                        class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl flex items-center gap-3 text-lg font-medium transition shadow-lg shadow-blue-600/10">
+                    <i class="fa-solid fa-plus"></i> New Instant Meeting
+                </button>
+                <button onclick="alert('Feature coming soon: Link copied to your clipboard.')" 
+                        class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-8 py-4 rounded-2xl flex items-center gap-3 text-lg font-medium transition">
+                    <i class="fa-solid fa-link"></i> Copy Room Link
+                </button>
+            </div>
+
+            <!-- Recent Activites Dashboard UI -->
+            <h3 class="text-xl font-bold mb-4">Quick Statistics Overview</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="text-sm text-slate-400">Total Minutes Used</div>
+                    <div class="text-3xl font-bold mt-1">1,240 mins</div>
+                </div>
+                <div class="glass p-6 rounded-2xl">
+                    <div class="text-sm text-slate-400">Recorded Sessions</div>
+                    <div class="text-3xl font-bold mt-1">18 Video Files</div>
+                </div>
+                <div class="glass p-6 rounded-2xl">
+                    <div class="text-sm text-slate-400">Cloud Storage</div>
+                    <div class="text-3xl font-bold mt-1">4.2 GB / 10 GB</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIDEO MEETING ROOM -->
+    <div id="meeting-room" class="page hidden flex flex-col h-screen bg-black">
+        <div class="bg-[#0f172a] p-5 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-6">
+                <span id="meeting-name" class="font-semibold text-lg tracking-wide text-slate-200">Q3 Strategy Planning</span>
+                <span id="timer" class="font-mono bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-md text-emerald-400 font-bold">00:00</span>
+            </div>
+            <button onclick="endMeeting()" class="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-red-600/20">End Call</button>
+        </div>
+
+        <div id="video-grid" class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-zinc-950 overflow-auto"></div>
+
+        <div class="bg-[#0f172a] p-6 flex justify-center gap-12 text-2xl border-t border-slate-800">
+            <button onclick="toggleMute()" class="text-slate-300 hover:text-blue-400 transition"><i class="fa-solid fa-microphone"></i></button>
+            <button onclick="toggleVideo()" class="text-slate-300 hover:text-blue-400 transition"><i class="fa-solid fa-video"></i></button>
+            <button onclick="toggleChatPanel()" class="text-slate-300 hover:text-blue-400 transition"><i class="fa-solid fa-comment-dots"></i></button>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat-panel" class="hidden absolute right-0 top-20 bottom-24 w-96 bg-[#111827] border-l border-slate-800 flex flex-col z-40 shadow-2xl">
+            <div class="p-5 border-b border-slate-800 font-semibold text-slate-200 flex items-center justify-between">
+                <span>Meeting Chat</span>
+                <button onclick="toggleChatPanel()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="chat-body" class="flex-1 p-5 overflow-auto space-y-4 text-sm"></div>
+            <div class="p-4 border-t border-slate-800 bg-[#0f172a]">
+                <input id="chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" 
+                       class="w-full bg-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none border border-slate-700 focus:border-purple-500 text-sm transition" placeholder="Type message and hit Enter...">
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH PAGES -->
+    <div id="login" class="page hidden min-h-screen flex items-center justify-center bg-[#0f172a]">
+        <div class="glass max-w-md w-full mx-4 rounded-3xl p-10 relative">
+            <button onclick="navigate('landing')" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-3xl font-bold text-center mb-2">Welcome Back</h2>
+            <p class="text-slate-400 text-center mb-8 text-sm">Sign in to coordinate clean streams</p>
+            <input id="login-email" type="email" placeholder="Email Address" class="w-full px-5 py-4 rounded-xl bg-slate-800/80 border border-slate-700 text-sm mb-4 focus:outline-none focus:border-blue-500 transition">
+            <input id="login-password" type="password" placeholder="Password" class="w-full px-5 py-4 rounded-xl bg-slate-800/80 border border-slate-700 text-sm mb-6 focus:outline-none focus:border-blue-500 transition">
+            <button onclick="performLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition shadow-lg shadow-blue-600/20">Sign In</button>
+        </div>
+    </div>
+
+    <div id="signup" class="page hidden min-h-screen flex items-center justify-center bg-[#0f172a]">
+        <div class="glass max-w-md w-full mx-4 rounded-3xl p-10 relative">
+            <button onclick="navigate('landing')" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-3xl font-bold text-center mb-2">Create Account</h2>
+            <p class="text-slate-400 text-center mb-8 text-sm">Deploy high quality secure node calls free</p>
+            <input type="text" placeholder="Full Name" class="w-full px-5 py-4 rounded-xl bg-slate-800/80 border border-slate-700 text-sm mb-4 focus:outline-none focus:border-purple-500 transition">
+            <input id="signup-email" type="email" placeholder="Email Address" class="w-full px-5 py-4 rounded-xl bg-slate-800/80 border border-slate-700 text-sm mb-6 focus:outline-none focus:border-purple-500 transition">
+            <button onclick="performSignup()" class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 rounded-xl font-semibold transition shadow-lg">Create Free Account</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#0a0f1d] border-t border-slate-900 py-8 text-center text-xs text-slate-500">
+        <p>© 2026 VividCall Inc. Made for Final Semester Project Infrastructure. All systems operational.</p>
+    </footer>
+
+     <script src="script.js" defer></script>
+</body>
+</html>
