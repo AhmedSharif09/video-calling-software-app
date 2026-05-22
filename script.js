@@ -43,12 +43,142 @@ function setActive(el) {
     el.classList.add('active');
 }
 
-function performLogin() {
+/* =========================================================
+   AUTH SYSTEM
+========================================================= */
+
+function performSignup() {
+
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value.trim();
+
+    if (!name || !email || !password) {
+
+        alert("Please fill all fields");
+        return;
+    }
+
+    const userData = {
+        name,
+        email,
+        password
+    };
+
+    localStorage.setItem('vividcall_user_data', JSON.stringify(userData));
+
+    localStorage.setItem('vividcall_loggedin', 'true');
+
+    localStorage.setItem('vividcall_user', name);
+
+    alert("Account created successfully");
+
+    updateUserUI(name);
+
     navigate('dashboard');
 }
 
-function performSignup() {
-    navigate('dashboard');
+/* ========================================================= */
+
+function performLogin() {
+
+    const email = document.getElementById('login-email').value.trim();
+
+    const password = document.getElementById('login-password').value.trim();
+
+    const savedUser = JSON.parse(
+        localStorage.getItem('vividcall_user_data')
+    );
+
+    if (!savedUser) {
+
+        alert("No account found. Please signup first.");
+        return;
+    }
+
+    if (
+        email === savedUser.email &&
+        password === savedUser.password
+    ) {
+
+        localStorage.setItem('vividcall_loggedin', 'true');
+
+        localStorage.setItem(
+            'vividcall_user',
+            savedUser.name
+        );
+
+        alert("Login successful");
+
+        updateUserUI(savedUser.name);
+
+        navigate('dashboard');
+
+    } else {
+
+        alert("Invalid email or password");
+    }
+}
+
+/* =========================================================
+   UPDATE USER UI
+========================================================= */
+
+function updateUserUI(name) {
+
+    const userName = document.querySelector('.user-name');
+
+    const dashGreeting = document.querySelector('.dash-greeting');
+
+    const avatar = document.querySelector('.user-avatar');
+
+    if (userName) {
+        userName.innerText = name;
+    }
+
+    if (dashGreeting) {
+        dashGreeting.innerHTML =
+            `Good evening, ${name} 👋`;
+    }
+
+    if (avatar) {
+        avatar.innerText = name.charAt(0).toUpperCase();
+    }
+}
+
+/* =========================================================
+   AUTO LOGIN
+========================================================= */
+
+window.addEventListener('load', () => {
+
+    const loggedIn = localStorage.getItem(
+        'vividcall_loggedin'
+    );
+
+    const user = localStorage.getItem(
+        'vividcall_user'
+    );
+
+    if (loggedIn === 'true' && user) {
+
+        updateUserUI(user);
+    }
+});
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+function logout() {
+
+    localStorage.removeItem('vividcall_loggedin');
+
+    localStorage.removeItem('vividcall_user');
+
+    alert("Logged out");
+
+    navigate('landing');
 }
 
 // ===== TOAST =====
@@ -664,4 +794,45 @@ window.addEventListener('load', () => {
     }
 
     console.log('%cVividCall WebRTC Engine Ready 🚀', 'color:#6366f1;font-size:16px;font-weight:bold');
+});
+
+/* ======================================================
+   AUTO JOIN ROOM FROM URL
+====================================================== */
+
+window.addEventListener('load', async () => {
+
+    const room = getRoomIdFromUrl();
+
+    if (room) {
+
+        let savedName = localStorage.getItem('vividcall_user');
+
+        if (!savedName) {
+            savedName = prompt("Enter your name") || "Guest";
+            localStorage.setItem('vividcall_user', savedName);
+        }
+
+        myName = savedName;
+
+        startMeetingRoom(room);
+    }
+});
+
+/* ======================================================
+   AUTO LOGIN
+====================================================== */
+
+window.addEventListener('load', () => {
+
+    const loggedIn = localStorage.getItem('vividcall_loggedin');
+
+    if (loggedIn === 'true') {
+
+        const user = localStorage.getItem('vividcall_user');
+
+        if (user) {
+            myName = user;
+        }
+    }
 });

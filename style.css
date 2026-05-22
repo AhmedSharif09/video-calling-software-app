@@ -1290,3 +1290,230 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast i { color: var(--green); }
+
+/* =========================================================
+   RESPONSIVE FIXES
+========================================================= */
+
+img,
+video {
+    max-width: 100%;
+}
+
+/* MOBILE NAV */
+@media (max-width: 900px) {
+
+    .nav-inner {
+        padding: 0 1rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+        height: auto;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+        order: 3;
+        flex-wrap: wrap;
+    }
+
+    .nav-actions {
+        margin-left: auto;
+    }
+
+    /* HERO */
+    .hero {
+        grid-template-columns: 1fr;
+        padding: 2rem 1rem 3rem;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .hero-content {
+        align-items: center;
+    }
+
+    .hero-sub {
+        max-width: 100%;
+    }
+
+    .hero-actions {
+        width: 100%;
+        align-items: center;
+    }
+
+    .btn-hero-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .join-form {
+        width: 100%;
+    }
+
+    .join-form input {
+        width: 100%;
+    }
+
+    .meeting-preview {
+        max-width: 100%;
+    }
+
+    .stats-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .stat-div {
+        display: none;
+    }
+
+    /* SECTIONS */
+    .steps {
+        flex-direction: column;
+    }
+
+    .step-arrow {
+        display: none;
+    }
+
+    .feature-grid,
+    .pricing-grid,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-grid.full .feature-card:nth-child(1),
+    .feature-grid.full .feature-card:nth-child(6),
+    .feature-grid:not(.full) .feature-card.large {
+        grid-column: span 1;
+    }
+
+    /* DASHBOARD */
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: relative;
+        top: 0;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard-main {
+        padding: 1rem;
+    }
+
+    .quick-actions {
+        flex-direction: column;
+    }
+
+    .qa-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+}
+
+/* =========================================================
+   MEETING ROOM MOBILE FIX
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .meeting-room-layout {
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .room-topbar {
+        padding: 0.8rem;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .video-grid {
+        padding: 0.5rem !important;
+        gap: 0.5rem !important;
+        height: calc(100dvh - 150px);
+    }
+
+    .video-grid.count-1,
+    .video-grid.count-2,
+    .video-grid.count-3,
+    .video-grid.count-4,
+    .video-grid.count-5,
+    .video-grid.count-6 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .video-tile {
+        min-height: 220px !important;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .video-tile video {
+        object-fit: cover;
+    }
+
+    /* CONTROLS */
+    .meeting-controls {
+        width: 100%;
+        overflow-x: auto;
+        padding: 0.75rem;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .ctrl-btn {
+        min-width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        flex-shrink: 0;
+    }
+
+    .ctrl-btn span {
+        display: none;
+    }
+
+    /* CHAT PANEL FIX */
+    .chat-panel {
+        position: fixed !important;
+        inset: auto 0 0 0;
+        width: 100% !important;
+        height: 60dvh !important;
+        z-index: 999;
+        transform: translateY(100%);
+        transition: 0.3s;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .chat-panel.show {
+        transform: translateY(0);
+    }
+
+}
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+.video-tile {
+    position: relative;
+    background: #111827;
+    min-height: 300px;
+}
+
+.video-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

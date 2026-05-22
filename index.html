@@ -1,529 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VividCall — Premium Video Meetings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<!-- NOISE OVERLAY -->
-<div class="noise"></div>
+    <!-- NOISE OVERLAY -->
+    <div class="noise"></div>
 
-<!-- NAVBAR -->
-<nav id="navbar">
-    <div class="nav-inner">
-        <div class="logo" onclick="navigate('landing')">
-            <div class="logo-mark">V</div>
-            <span>VividCall</span>
+    <!-- NAVBAR -->
+    <nav id="navbar">
+        <div class="nav-inner">
+            <div class="logo" onclick="navigate('landing')">
+                <div class="logo-mark">V</div>
+                <span>VividCall</span>
+            </div>
+            <div class="nav-links">
+                <a onclick="navigate('landing')" id="nav-home" class="nav-link active">Home</a>
+                <a onclick="navigate('features')" id="nav-features" class="nav-link">Features</a>
+                <a onclick="navigate('pricing')" id="nav-pricing" class="nav-link">Pricing</a>
+                <a onclick="navigate('dashboard')" id="nav-dashboard" class="nav-link">Dashboard</a>
+            </div>
+            <div class="nav-actions">
+                <button onclick="showPage('login')" class="btn-ghost">Login</button>
+                <button onclick="showPage('signup')" class="btn-primary">Get Started</button>
+            </div>
         </div>
-        <div class="nav-links">
-            <a onclick="navigate('landing')" id="nav-home" class="nav-link active">Home</a>
-            <a onclick="navigate('features')" id="nav-features" class="nav-link">Features</a>
-            <a onclick="navigate('pricing')" id="nav-pricing" class="nav-link">Pricing</a>
-            <a onclick="navigate('dashboard')" id="nav-dashboard" class="nav-link">Dashboard</a>
-        </div>
-        <div class="nav-actions">
-            <button onclick="showPage('login')" class="btn-ghost">Login</button>
-            <button onclick="showPage('signup')" class="btn-primary">Get Started</button>
-        </div>
+    </nav>
+
+    <!-- ===== LANDING PAGE ===== -->
+    <div id="landing" class="page">
+
+        <section class="hero">
+            <div class="hero-bg">
+                <div class="orb orb-1"></div>
+                <div class="orb orb-2"></div>
+                <div class="orb orb-3"></div>
+                <div class="grid-lines"></div>
+            </div>
+
+            <div class="hero-content">
+                <div class="pill-badge">
+                    <span class="pulse-dot"></span>
+                    WebRTC Powered · Real-Time · Zero Install
+                </div>
+
+                <h1 class="hero-title">
+                    Meet Without<br>
+                    <span class="gradient-text">Boundaries</span>
+                </h1>
+
+                <p class="hero-sub">
+                    Share a link. Anyone who opens it joins your meeting instantly.<br>
+                    No apps, no signups, no friction — just crystal-clear video.
+                </p>
+
+                <div class="hero-actions">
+                    <button onclick="createMeeting()" class="btn-hero-primary">
+                        <i class="fa-solid fa-video"></i>
+                        Start New Meeting
+                    </button>
+                    <div class="join-form">
+                        <input id="join-code-input" type="text" placeholder="Enter room code..." maxlength="20">
+                        <button onclick="joinByCode()" class="btn-join">Join</button>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="stat-val">99.99%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat">
+                        <div class="stat-val">&lt;45ms</div>
+                        <div class="stat-label">Latency</div>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat">
+                        <div class="stat-val">E2EE</div>
+                        <div class="stat-label">Encrypted</div>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat">
+                        <div class="stat-val">4K UHD</div>
+                        <div class="stat-label">Max Quality</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="meeting-preview">
+                    <div class="mp-bar">
+                        <div class="mp-dot red"></div>
+                        <div class="mp-dot amber"></div>
+                        <div class="mp-dot green"></div>
+                        <span class="mp-title">Q3 Strategy — Live</span>
+                        <div class="mp-timer">04:32</div>
+                    </div>
+                    <div class="mp-grid">
+                        <div class="mp-tile active">
+                            <div class="mp-avatar" style="background: linear-gradient(135deg,#6366f1,#8b5cf6)">M</div>
+                            <div class="mp-name">Muhammad <span class="you-tag">You</span></div>
+                            <div class="mp-speaking"></div>
+                        </div>
+                        <div class="mp-tile">
+                            <div class="mp-avatar" style="background: linear-gradient(135deg,#0ea5e9,#06b6d4)">S</div>
+                            <div class="mp-name">Sara</div>
+                        </div>
+                        <div class="mp-tile">
+                            <div class="mp-avatar" style="background: linear-gradient(135deg,#f43f5e,#ec4899)">A</div>
+                            <div class="mp-name">Ahmed</div>
+                        </div>
+                        <div class="mp-tile screen-share">
+                            <i class="fa-solid fa-desktop"></i>
+                            <span>Screen Share Active</span>
+                        </div>
+                    </div>
+                    <div class="mp-controls">
+                        <button class="mpc active"><i class="fa-solid fa-microphone"></i></button>
+                        <button class="mpc active"><i class="fa-solid fa-video"></i></button>
+                        <button class="mpc"><i class="fa-solid fa-desktop"></i></button>
+                        <button class="mpc end"><i class="fa-solid fa-phone-slash"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="section-inner">
+                <div class="section-label">How It Works</div>
+                <h2 class="section-title">Anyone with the link can join</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">01</div>
+                        <div class="step-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <h3>Create Meeting</h3>
+                        <p>Click "Start New Meeting" — a unique room is created instantly with your own secure ID.</p>
+                    </div>
+                    <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="step">
+                        <div class="step-num">02</div>
+                        <div class="step-icon"><i class="fa-solid fa-link"></i></div>
+                        <h3>Share the Link</h3>
+                        <p>Copy your room URL and send it via WhatsApp, Slack, or Email. No account needed to join.</p>
+                    </div>
+                    <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="step">
+                        <div class="step-num">03</div>
+                        <div class="step-icon"><i class="fa-solid fa-users"></i></div>
+                        <h3>Meet Together</h3>
+                        <p>Everyone who opens the link instantly connects via WebRTC — peer-to-peer, encrypted, and
+                            live.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <div class="section-inner">
+                <div class="section-label">Features</div>
+                <h2 class="section-title">Built for real collaboration</h2>
+                <div class="feature-grid">
+                    <div class="feature-card large">
+                        <div class="fc-icon blue"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h3>DTLS/SRTP Encryption</h3>
+                        <p>Every audio, video, and data packet is encrypted at the browser level before transmission.
+                            Nobody can intercept your calls.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="fc-icon purple"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <h3>AI Noise Filter</h3>
+                        <p>Neural acoustic filtering removes background noise in real time.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="fc-icon cyan"><i class="fa-solid fa-closed-captioning"></i></div>
+                        <h3>Live Captions</h3>
+                        <p>Real-time transcription in multiple languages powered by Web Speech API.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="fc-icon amber"><i class="fa-solid fa-desktop"></i></div>
+                        <h3>Screen Sharing</h3>
+                        <p>Share your full screen, window, or a specific browser tab instantly.</p>
+                    </div>
+                    <div class="feature-card large">
+                        <div class="fc-icon green"><i class="fa-solid fa-bolt"></i></div>
+                        <h3>Adaptive Bitrate</h3>
+                        <p>VividCall reads your bandwidth every millisecond. On slow networks, audio stays clear while
+                            video adjusts — no frozen screens, no dropped calls.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section">
+            <div class="section-inner narrow">
+                <h2 class="section-title centered">Questions Answered</h2>
+                <div class="faq-list">
+                    <div class="faq-item">
+                        <div class="faq-q">Do participants need an account?</div>
+                        <div class="faq-a">No. Anyone with the meeting link can join directly — no signup, no download,
+                            no app required.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">How many people can join?</div>
+                        <div class="faq-a">Free rooms support up to 10 participants. Pro rooms scale to 100 with our SFU
+                            media cluster.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Is it really end-to-end encrypted?</div>
+                        <div class="faq-a">Yes. WebRTC uses DTLS for key exchange and SRTP for media encryption natively
+                            in the browser.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
-</nav>
 
-<!-- ===== LANDING PAGE ===== -->
-<div id="landing" class="page">
-
-    <section class="hero">
-        <div class="hero-bg">
-            <div class="orb orb-1"></div>
-            <div class="orb orb-2"></div>
-            <div class="orb orb-3"></div>
-            <div class="grid-lines"></div>
+    <!-- ===== FEATURES PAGE ===== -->
+    <div id="features" class="page hidden">
+        <div class="page-hero">
+            <h1>Everything you need to <span class="gradient-text">collaborate</span></h1>
+            <p>Packed with features that make remote meetings feel like the same room.</p>
         </div>
-
-        <div class="hero-content">
-            <div class="pill-badge">
-                <span class="pulse-dot"></span>
-                WebRTC Powered · Real-Time · Zero Install
-            </div>
-
-            <h1 class="hero-title">
-                Meet Without<br>
-                <span class="gradient-text">Boundaries</span>
-            </h1>
-
-            <p class="hero-sub">
-                Share a link. Anyone who opens it joins your meeting instantly.<br>
-                No apps, no signups, no friction — just crystal-clear video.
-            </p>
-
-            <div class="hero-actions">
-                <button onclick="createMeeting()" class="btn-hero-primary">
-                    <i class="fa-solid fa-video"></i>
-                    Start New Meeting
-                </button>
-                <div class="join-form">
-                    <input id="join-code-input" type="text" placeholder="Enter room code..." maxlength="20">
-                    <button onclick="joinByCode()" class="btn-join">Join</button>
-                </div>
-            </div>
-
-            <div class="stats-row">
-                <div class="stat">
-                    <div class="stat-val">99.99%</div>
-                    <div class="stat-label">Uptime</div>
-                </div>
-                <div class="stat-div"></div>
-                <div class="stat">
-                    <div class="stat-val">&lt;45ms</div>
-                    <div class="stat-label">Latency</div>
-                </div>
-                <div class="stat-div"></div>
-                <div class="stat">
-                    <div class="stat-val">E2EE</div>
-                    <div class="stat-label">Encrypted</div>
-                </div>
-                <div class="stat-div"></div>
-                <div class="stat">
-                    <div class="stat-val">4K UHD</div>
-                    <div class="stat-label">Max Quality</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="hero-visual">
-            <div class="meeting-preview">
-                <div class="mp-bar">
-                    <div class="mp-dot red"></div>
-                    <div class="mp-dot amber"></div>
-                    <div class="mp-dot green"></div>
-                    <span class="mp-title">Q3 Strategy — Live</span>
-                    <div class="mp-timer">04:32</div>
-                </div>
-                <div class="mp-grid">
-                    <div class="mp-tile active">
-                        <div class="mp-avatar" style="background: linear-gradient(135deg,#6366f1,#8b5cf6)">M</div>
-                        <div class="mp-name">Muhammad <span class="you-tag">You</span></div>
-                        <div class="mp-speaking"></div>
-                    </div>
-                    <div class="mp-tile">
-                        <div class="mp-avatar" style="background: linear-gradient(135deg,#0ea5e9,#06b6d4)">S</div>
-                        <div class="mp-name">Sara</div>
-                    </div>
-                    <div class="mp-tile">
-                        <div class="mp-avatar" style="background: linear-gradient(135deg,#f43f5e,#ec4899)">A</div>
-                        <div class="mp-name">Ahmed</div>
-                    </div>
-                    <div class="mp-tile screen-share">
-                        <i class="fa-solid fa-desktop"></i>
-                        <span>Screen Share Active</span>
-                    </div>
-                </div>
-                <div class="mp-controls">
-                    <button class="mpc active"><i class="fa-solid fa-microphone"></i></button>
-                    <button class="mpc active"><i class="fa-solid fa-video"></i></button>
-                    <button class="mpc"><i class="fa-solid fa-desktop"></i></button>
-                    <button class="mpc end"><i class="fa-solid fa-phone-slash"></i></button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="how-it-works">
         <div class="section-inner">
-            <div class="section-label">How It Works</div>
-            <h2 class="section-title">Anyone with the link can join</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-num">01</div>
-                    <div class="step-icon"><i class="fa-solid fa-bolt"></i></div>
-                    <h3>Create Meeting</h3>
-                    <p>Click "Start New Meeting" — a unique room is created instantly with your own secure ID.</p>
-                </div>
-                <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
-                <div class="step">
-                    <div class="step-num">02</div>
-                    <div class="step-icon"><i class="fa-solid fa-link"></i></div>
-                    <h3>Share the Link</h3>
-                    <p>Copy your room URL and send it via WhatsApp, Slack, or Email. No account needed to join.</p>
-                </div>
-                <div class="step-arrow"><i class="fa-solid fa-arrow-right"></i></div>
-                <div class="step">
-                    <div class="step-num">03</div>
-                    <div class="step-icon"><i class="fa-solid fa-users"></i></div>
-                    <h3>Meet Together</h3>
-                    <p>Everyone who opens the link instantly connects via WebRTC — peer-to-peer, encrypted, and live.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="features-section">
-        <div class="section-inner">
-            <div class="section-label">Features</div>
-            <h2 class="section-title">Built for real collaboration</h2>
-            <div class="feature-grid">
+            <div class="feature-grid full">
                 <div class="feature-card large">
-                    <div class="fc-icon blue"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3>DTLS/SRTP Encryption</h3>
-                    <p>Every audio, video, and data packet is encrypted at the browser level before transmission. Nobody can intercept your calls.</p>
+                    <div class="fc-icon blue"><i class="fa-solid fa-video"></i></div>
+                    <h3>4K Ultra HD Video</h3>
+                    <p>Crystal-clear adaptive video streaming that scales from HD to 4K based on your connection speed.
+                    </p>
                 </div>
                 <div class="feature-card">
-                    <div class="fc-icon purple"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                    <h3>AI Noise Filter</h3>
-                    <p>Neural acoustic filtering removes background noise in real time.</p>
+                    <div class="fc-icon purple"><i class="fa-solid fa-microphone-slash"></i></div>
+                    <h3>AI Noise Cancellation</h3>
+                    <p>Block keyboards, fans, traffic, and background chatter in real time.</p>
                 </div>
                 <div class="feature-card">
                     <div class="fc-icon cyan"><i class="fa-solid fa-closed-captioning"></i></div>
                     <h3>Live Captions</h3>
-                    <p>Real-time transcription in multiple languages powered by Web Speech API.</p>
+                    <p>Multilingual real-time transcription with speaker identification.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="fc-icon amber"><i class="fa-solid fa-desktop"></i></div>
-                    <h3>Screen Sharing</h3>
-                    <p>Share your full screen, window, or a specific browser tab instantly.</p>
+                    <div class="fc-icon green"><i class="fa-solid fa-record-vinyl"></i></div>
+                    <h3>Cloud Recording</h3>
+                    <p>Record sessions and get shareable links automatically after the call ends.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon amber"><i class="fa-solid fa-hand"></i></div>
+                    <h3>Reactions & Polls</h3>
+                    <p>Keep engagement high with live emoji reactions and in-meeting polls.</p>
                 </div>
                 <div class="feature-card large">
-                    <div class="fc-icon green"><i class="fa-solid fa-bolt"></i></div>
-                    <h3>Adaptive Bitrate</h3>
-                    <p>VividCall reads your bandwidth every millisecond. On slow networks, audio stays clear while video adjusts — no frozen screens, no dropped calls.</p>
+                    <div class="fc-icon pink"><i class="fa-solid fa-lock"></i></div>
+                    <h3>Waiting Room & Host Controls</h3>
+                    <p>Admit participants manually, mute everyone, lock the room, and manage who can share their screen
+                        — full host authority over your meeting.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section class="faq-section">
-        <div class="section-inner narrow">
-            <h2 class="section-title centered">Questions Answered</h2>
-            <div class="faq-list">
-                <div class="faq-item">
-                    <div class="faq-q">Do participants need an account?</div>
-                    <div class="faq-a">No. Anyone with the meeting link can join directly — no signup, no download, no app required.</div>
+    <!-- ===== PRICING PAGE ===== -->
+    <div id="pricing" class="page hidden">
+        <div class="page-hero">
+            <h1>Simple, <span class="gradient-text">honest</span> pricing</h1>
+            <p>No hidden fees. No confusing tiers. Just pick what fits.</p>
+        </div>
+        <div class="section-inner">
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="plan-name">Free</div>
+                    <div class="plan-price">$0<span>/mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="fa-solid fa-check"></i> 40 min meetings</li>
+                        <li><i class="fa-solid fa-check"></i> Up to 10 participants</li>
+                        <li><i class="fa-solid fa-check"></i> Screen sharing</li>
+                        <li><i class="fa-solid fa-check"></i> Basic AI features</li>
+                    </ul>
+                    <button onclick="showPage('signup')" class="plan-btn">Get Started Free</button>
                 </div>
-                <div class="faq-item">
-                    <div class="faq-q">How many people can join?</div>
-                    <div class="faq-a">Free rooms support up to 10 participants. Pro rooms scale to 100 with our SFU media cluster.</div>
+                <div class="pricing-card featured">
+                    <div class="plan-badge">Most Popular</div>
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">$12<span>/mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="fa-solid fa-check"></i> Unlimited duration</li>
+                        <li><i class="fa-solid fa-check"></i> Up to 100 participants</li>
+                        <li><i class="fa-solid fa-check"></i> Cloud Recording</li>
+                        <li><i class="fa-solid fa-check"></i> Advanced AI + Captions</li>
+                        <li><i class="fa-solid fa-check"></i> Team admin controls</li>
+                    </ul>
+                    <button onclick="showPage('signup')" class="plan-btn featured">Start Pro Trial</button>
                 </div>
-                <div class="faq-item">
-                    <div class="faq-q">Is it really end-to-end encrypted?</div>
-                    <div class="faq-a">Yes. WebRTC uses DTLS for key exchange and SRTP for media encryption natively in the browser.</div>
+                <div class="pricing-card">
+                    <div class="plan-name">Enterprise</div>
+                    <div class="plan-price">Custom</div>
+                    <ul class="plan-features">
+                        <li><i class="fa-solid fa-check"></i> Everything in Pro</li>
+                        <li><i class="fa-solid fa-check"></i> Unlimited participants</li>
+                        <li><i class="fa-solid fa-check"></i> SSO & SAML</li>
+                        <li><i class="fa-solid fa-check"></i> Dedicated support</li>
+                    </ul>
+                    <button class="plan-btn">Contact Sales</button>
                 </div>
             </div>
         </div>
-    </section>
-</div>
-
-<!-- ===== FEATURES PAGE ===== -->
-<div id="features" class="page hidden">
-    <div class="page-hero">
-        <h1>Everything you need to <span class="gradient-text">collaborate</span></h1>
-        <p>Packed with features that make remote meetings feel like the same room.</p>
     </div>
-    <div class="section-inner">
-        <div class="feature-grid full">
-            <div class="feature-card large">
-                <div class="fc-icon blue"><i class="fa-solid fa-video"></i></div>
-                <h3>4K Ultra HD Video</h3>
-                <p>Crystal-clear adaptive video streaming that scales from HD to 4K based on your connection speed.</p>
-            </div>
-            <div class="feature-card">
-                <div class="fc-icon purple"><i class="fa-solid fa-microphone-slash"></i></div>
-                <h3>AI Noise Cancellation</h3>
-                <p>Block keyboards, fans, traffic, and background chatter in real time.</p>
-            </div>
-            <div class="feature-card">
-                <div class="fc-icon cyan"><i class="fa-solid fa-closed-captioning"></i></div>
-                <h3>Live Captions</h3>
-                <p>Multilingual real-time transcription with speaker identification.</p>
-            </div>
-            <div class="feature-card">
-                <div class="fc-icon green"><i class="fa-solid fa-record-vinyl"></i></div>
-                <h3>Cloud Recording</h3>
-                <p>Record sessions and get shareable links automatically after the call ends.</p>
-            </div>
-            <div class="feature-card">
-                <div class="fc-icon amber"><i class="fa-solid fa-hand"></i></div>
-                <h3>Reactions & Polls</h3>
-                <p>Keep engagement high with live emoji reactions and in-meeting polls.</p>
-            </div>
-            <div class="feature-card large">
-                <div class="fc-icon pink"><i class="fa-solid fa-lock"></i></div>
-                <h3>Waiting Room & Host Controls</h3>
-                <p>Admit participants manually, mute everyone, lock the room, and manage who can share their screen — full host authority over your meeting.</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- ===== PRICING PAGE ===== -->
-<div id="pricing" class="page hidden">
-    <div class="page-hero">
-        <h1>Simple, <span class="gradient-text">honest</span> pricing</h1>
-        <p>No hidden fees. No confusing tiers. Just pick what fits.</p>
-    </div>
-    <div class="section-inner">
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <div class="plan-name">Free</div>
-                <div class="plan-price">$0<span>/mo</span></div>
-                <ul class="plan-features">
-                    <li><i class="fa-solid fa-check"></i> 40 min meetings</li>
-                    <li><i class="fa-solid fa-check"></i> Up to 10 participants</li>
-                    <li><i class="fa-solid fa-check"></i> Screen sharing</li>
-                    <li><i class="fa-solid fa-check"></i> Basic AI features</li>
-                </ul>
-                <button onclick="showPage('signup')" class="plan-btn">Get Started Free</button>
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard" class="page hidden dashboard-layout">
+        <aside class="sidebar">
+            <div class="logo sidebar-logo" onclick="navigate('landing')">
+                <div class="logo-mark">V</div>
+                <span>VividCall</span>
             </div>
-            <div class="pricing-card featured">
-                <div class="plan-badge">Most Popular</div>
-                <div class="plan-name">Pro</div>
-                <div class="plan-price">$12<span>/mo</span></div>
-                <ul class="plan-features">
-                    <li><i class="fa-solid fa-check"></i> Unlimited duration</li>
-                    <li><i class="fa-solid fa-check"></i> Up to 100 participants</li>
-                    <li><i class="fa-solid fa-check"></i> Cloud Recording</li>
-                    <li><i class="fa-solid fa-check"></i> Advanced AI + Captions</li>
-                    <li><i class="fa-solid fa-check"></i> Team admin controls</li>
-                </ul>
-                <button onclick="showPage('signup')" class="plan-btn featured">Start Pro Trial</button>
+            <nav class="sidebar-nav">
+                <a onclick="setActive(this)" class="sidebar-link active"><i class="fa-solid fa-house"></i> Dashboard</a>
+                <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-calendar-plus"></i> Schedule</a>
+                <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-users"></i> Team</a>
+                <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-circle-play"></i> Recordings</a>
+                <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-chart-bar"></i> Analytics</a>
+                <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-gear"></i> Settings</a>
+            </nav>
+            <div class="sidebar-user">
+                <div class="user-avatar">M</div>
+                <div>
+                    <div class="user-name">Muhammad</div>
+                    <div class="user-role">Super Admin</div>
+                </div>
             </div>
-            <div class="pricing-card">
-                <div class="plan-name">Enterprise</div>
-                <div class="plan-price">Custom</div>
-                <ul class="plan-features">
-                    <li><i class="fa-solid fa-check"></i> Everything in Pro</li>
-                    <li><i class="fa-solid fa-check"></i> Unlimited participants</li>
-                    <li><i class="fa-solid fa-check"></i> SSO & SAML</li>
-                    <li><i class="fa-solid fa-check"></i> Dedicated support</li>
-                </ul>
-                <button class="plan-btn">Contact Sales</button>
-            </div>
-        </div>
-    </div>
-</div>
+        </aside>
 
-<!-- ===== DASHBOARD ===== -->
-<div id="dashboard" class="page hidden dashboard-layout">
-    <aside class="sidebar">
-        <div class="logo sidebar-logo" onclick="navigate('landing')">
-            <div class="logo-mark">V</div>
-            <span>VividCall</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a onclick="setActive(this)" class="sidebar-link active"><i class="fa-solid fa-house"></i> Dashboard</a>
-            <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-calendar-plus"></i> Schedule</a>
-            <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-users"></i> Team</a>
-            <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-circle-play"></i> Recordings</a>
-            <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-chart-bar"></i> Analytics</a>
-            <a onclick="setActive(this)" class="sidebar-link"><i class="fa-solid fa-gear"></i> Settings</a>
-        </nav>
-        <div class="sidebar-user">
-            <div class="user-avatar">M</div>
-            <div>
-                <div class="user-name">Muhammad</div>
-                <div class="user-role">Super Admin</div>
+        <main class="dashboard-main">
+            <div class="dash-header">
+                <div>
+                    <h1 class="dash-greeting">Good evening, Muhammad 👋</h1>
+                    <p class="dash-sub">You have 3 meetings scheduled today</p>
+                </div>
             </div>
-        </div>
-    </aside>
 
-    <main class="dashboard-main">
-        <div class="dash-header">
-            <div>
-                <h1 class="dash-greeting">Good evening, Muhammad 👋</h1>
-                <p class="dash-sub">You have 3 meetings scheduled today</p>
+            <div class="quick-actions">
+                <button onclick="createMeeting()" class="qa-btn primary">
+                    <i class="fa-solid fa-video"></i>
+                    <span>New Meeting</span>
+                </button>
+                <button onclick="copyRoomLink()" class="qa-btn">
+                    <i class="fa-solid fa-link"></i>
+                    <span>Copy Link</span>
+                </button>
+                <button class="qa-btn">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>Schedule</span>
+                </button>
+                <button class="qa-btn">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Invite</span>
+                </button>
+                <button onclick="logout()" class="qa-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
             </div>
-        </div>
 
-        <div class="quick-actions">
-            <button onclick="createMeeting()" class="qa-btn primary">
-                <i class="fa-solid fa-video"></i>
-                <span>New Meeting</span>
-            </button>
-            <button onclick="copyRoomLink()" class="qa-btn">
-                <i class="fa-solid fa-link"></i>
-                <span>Copy Link</span>
-            </button>
-            <button class="qa-btn">
-                <i class="fa-solid fa-calendar-plus"></i>
-                <span>Schedule</span>
-            </button>
-            <button class="qa-btn">
-                <i class="fa-solid fa-user-plus"></i>
-                <span>Invite</span>
-            </button>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="sc-label">Total Minutes</div>
-                <div class="sc-value">1,240</div>
-                <div class="sc-change up"><i class="fa-solid fa-arrow-trend-up"></i> 12% this week</div>
-            </div>
-            <div class="stat-card">
-                <div class="sc-label">Recorded Sessions</div>
-                <div class="sc-value">18</div>
-                <div class="sc-change up"><i class="fa-solid fa-arrow-trend-up"></i> 3 new</div>
-            </div>
-            <div class="stat-card">
-                <div class="sc-label">Storage Used</div>
-                <div class="sc-value">4.2 GB</div>
-                <div class="sc-bar"><div class="sc-bar-fill" style="width:42%"></div></div>
-            </div>
-            <div class="stat-card">
-                <div class="sc-label">Team Members</div>
-                <div class="sc-value">12</div>
-                <div class="sc-change">2 online now</div>
-            </div>
-        </div>
-
-        <div class="recent-meetings">
-            <h3>Recent Meetings</h3>
-            <div class="meeting-list">
-                <div class="meeting-row">
-                    <div class="mr-icon blue"><i class="fa-solid fa-video"></i></div>
-                    <div class="mr-info">
-                        <div class="mr-title">Q3 Strategy Planning</div>
-                        <div class="mr-meta">Today, 2:00 PM · 8 participants · 47 mins</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="sc-label">Total Minutes</div>
+                    <div class="sc-value">1,240</div>
+                    <div class="sc-change up"><i class="fa-solid fa-arrow-trend-up"></i> 12% this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">Recorded Sessions</div>
+                    <div class="sc-value">18</div>
+                    <div class="sc-change up"><i class="fa-solid fa-arrow-trend-up"></i> 3 new</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">Storage Used</div>
+                    <div class="sc-value">4.2 GB</div>
+                    <div class="sc-bar">
+                        <div class="sc-bar-fill" style="width:42%"></div>
                     </div>
-                    <div class="mr-badge completed">Completed</div>
                 </div>
-                <div class="meeting-row">
-                    <div class="mr-icon purple"><i class="fa-solid fa-video"></i></div>
-                    <div class="mr-info">
-                        <div class="mr-title">Design Review Sprint 4</div>
-                        <div class="mr-meta">Yesterday · 5 participants · 32 mins</div>
+                <div class="stat-card">
+                    <div class="sc-label">Team Members</div>
+                    <div class="sc-value">12</div>
+                    <div class="sc-change">2 online now</div>
+                </div>
+            </div>
+
+            <div class="recent-meetings">
+                <h3>Recent Meetings</h3>
+                <div class="meeting-list">
+                    <div class="meeting-row">
+                        <div class="mr-icon blue"><i class="fa-solid fa-video"></i></div>
+                        <div class="mr-info">
+                            <div class="mr-title">Q3 Strategy Planning</div>
+                            <div class="mr-meta">Today, 2:00 PM · 8 participants · 47 mins</div>
+                        </div>
+                        <div class="mr-badge completed">Completed</div>
                     </div>
-                    <div class="mr-badge completed">Completed</div>
-                </div>
-                <div class="meeting-row">
-                    <div class="mr-icon amber"><i class="fa-solid fa-calendar"></i></div>
-                    <div class="mr-info">
-                        <div class="mr-title">Client Demo — Acme Corp</div>
-                        <div class="mr-meta">Tomorrow, 11:00 AM · 4 participants</div>
+                    <div class="meeting-row">
+                        <div class="mr-icon purple"><i class="fa-solid fa-video"></i></div>
+                        <div class="mr-info">
+                            <div class="mr-title">Design Review Sprint 4</div>
+                            <div class="mr-meta">Yesterday · 5 participants · 32 mins</div>
+                        </div>
+                        <div class="mr-badge completed">Completed</div>
                     </div>
-                    <div class="mr-badge upcoming">Upcoming</div>
+                    <div class="meeting-row">
+                        <div class="mr-icon amber"><i class="fa-solid fa-calendar"></i></div>
+                        <div class="mr-info">
+                            <div class="mr-title">Client Demo — Acme Corp</div>
+                            <div class="mr-meta">Tomorrow, 11:00 AM · 4 participants</div>
+                        </div>
+                        <div class="mr-badge upcoming">Upcoming</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== MEETING ROOM ===== -->
+    <div id="meeting-room" class="page hidden meeting-room-layout">
+        <div class="room-topbar">
+            <div class="room-info">
+                <div class="room-live-dot"></div>
+                <span id="room-title">Meeting Room</span>
+                <div class="room-id-badge" id="room-id-display"></div>
+            </div>
+            <div class="room-center">
+                <div class="room-timer" id="timer">00:00</div>
+            </div>
+            <div class="room-actions-top">
+                <button onclick="copyCurrentRoomLink()" class="room-btn-sm" title="Copy meeting link">
+                    <i class="fa-solid fa-link"></i> Copy Link
+                </button>
+                <button onclick="endMeeting()" class="end-call-btn">
+                    <i class="fa-solid fa-phone-slash"></i> End Call
+                </button>
+            </div>
+        </div>
+
+        <div class="room-body">
+            <div id="video-grid" class="video-grid"></div>
+
+            <div id="chat-panel" class="chat-panel hidden">
+                <div class="chat-header">
+                    <span>Meeting Chat</span>
+                    <button onclick="toggleChat()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-area">
+                    <input id="chat-input" type="text" placeholder="Message..."
+                        onkeypress="if(event.key==='Enter')sendChat()">
+                    <button onclick="sendChat()" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
-    </main>
-</div>
 
-<!-- ===== MEETING ROOM ===== -->
-<div id="meeting-room" class="page hidden meeting-room-layout">
-    <div class="room-topbar">
-        <div class="room-info">
-            <div class="room-live-dot"></div>
-            <span id="room-title">Meeting Room</span>
-            <div class="room-id-badge" id="room-id-display"></div>
-        </div>
-        <div class="room-center">
-            <div class="room-timer" id="timer">00:00</div>
-        </div>
-        <div class="room-actions-top">
-            <button onclick="copyCurrentRoomLink()" class="room-btn-sm" title="Copy meeting link">
-                <i class="fa-solid fa-link"></i> Copy Link
-            </button>
-            <button onclick="endMeeting()" class="end-call-btn">
-                <i class="fa-solid fa-phone-slash"></i> End Call
-            </button>
-        </div>
-    </div>
-
-    <div class="room-body">
-        <div id="video-grid" class="video-grid"></div>
-
-        <div id="chat-panel" class="chat-panel hidden">
-            <div class="chat-header">
-                <span>Meeting Chat</span>
-                <button onclick="toggleChat()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        <div class="room-controls">
+            <div class="controls-group">
+                <button id="mic-btn" onclick="toggleMic()" class="ctrl-btn active" title="Toggle Microphone">
+                    <i class="fa-solid fa-microphone"></i>
+                    <span>Mic</span>
+                </button>
+                <button id="cam-btn" onclick="toggleCam()" class="ctrl-btn active" title="Toggle Camera">
+                    <i class="fa-solid fa-video"></i>
+                    <span>Camera</span>
+                </button>
+                <button id="screen-btn" onclick="toggleScreen()" class="ctrl-btn" title="Share Screen">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>Share</span>
+                </button>
+                <button id="chat-btn" onclick="toggleChat()" class="ctrl-btn" title="Chat">
+                    <i class="fa-solid fa-comment-dots"></i>
+                    <span>Chat</span>
+                </button>
             </div>
-            <div id="chat-messages" class="chat-messages"></div>
-            <div class="chat-input-area">
-                <input id="chat-input" type="text" placeholder="Message..." onkeypress="if(event.key==='Enter')sendChat()">
-                <button onclick="sendChat()" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+            <button onclick="endMeeting()" class="ctrl-end">
+                <i class="fa-solid fa-phone-slash"></i>
+                <span>Leave</span>
+            </button>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="conn-status" class="conn-status">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Connecting peers...
+        </div>
+    </div>
+
+    <!-- ===== AUTH PAGES ===== -->
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="login" class="page hidden auth-page">
+        <div class="auth-card">
+
+            <button onclick="navigate('landing')" class="auth-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="auth-logo">
+                <div class="logo-mark">V</div>
             </div>
-        </div>
-    </div>
 
-    <div class="room-controls">
-        <div class="controls-group">
-            <button id="mic-btn" onclick="toggleMic()" class="ctrl-btn active" title="Toggle Microphone">
-                <i class="fa-solid fa-microphone"></i>
-                <span>Mic</span>
+            <h2>Welcome back</h2>
+
+            <p class="auth-sub">
+                Sign in to your VividCall account
+            </p>
+
+            <input type="email" id="login-email" placeholder="Email address" class="auth-input">
+
+            <input type="password" id="login-password" placeholder="Password" class="auth-input">
+
+            <button onclick="performLogin()" class="auth-btn">
+                Sign In
             </button>
-            <button id="cam-btn" onclick="toggleCam()" class="ctrl-btn active" title="Toggle Camera">
-                <i class="fa-solid fa-video"></i>
-                <span>Camera</span>
+
+            <div class="auth-alt">
+                No account?
+                <a onclick="showPage('signup')">
+                    Create one free
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== SIGNUP PAGE ===== -->
+    <div id="signup" class="page hidden auth-page">
+
+        <div class="auth-card">
+
+            <button onclick="navigate('landing')" class="auth-close">
+                <i class="fa-solid fa-xmark"></i>
             </button>
-            <button id="screen-btn" onclick="toggleScreen()" class="ctrl-btn" title="Share Screen">
-                <i class="fa-solid fa-desktop"></i>
-                <span>Share</span>
+
+            <div class="auth-logo">
+                <div class="logo-mark">V</div>
+            </div>
+
+            <h2>Create account</h2>
+
+            <p class="auth-sub">
+                Start with a free plan — no credit card needed
+            </p>
+
+            <input type="text" id="signup-name" placeholder="Full name" class="auth-input">
+
+            <input type="email" id="signup-email" placeholder="Email address" class="auth-input">
+
+            <input type="password" id="signup-password" placeholder="Create password" class="auth-input">
+
+            <button onclick="performSignup()" class="auth-btn">
+                Create Free Account
             </button>
-            <button id="chat-btn" onclick="toggleChat()" class="ctrl-btn" title="Chat">
-                <i class="fa-solid fa-comment-dots"></i>
-                <span>Chat</span>
-            </button>
+
+            <div class="auth-alt">
+                Already have one?
+                <a onclick="showPage('login')">
+                    Sign in
+                </a>
+            </div>
+
         </div>
-        <button onclick="endMeeting()" class="ctrl-end">
-            <i class="fa-solid fa-phone-slash"></i>
-            <span>Leave</span>
-        </button>
+
     </div>
 
-    <!-- Connection Status -->
-    <div id="conn-status" class="conn-status">
-        <i class="fa-solid fa-circle-notch fa-spin"></i> Connecting peers...
-    </div>
-</div>
-
-<!-- ===== AUTH PAGES ===== -->
-<div id="login" class="page hidden auth-page">
-    <div class="auth-card">
-        <button onclick="navigate('landing')" class="auth-close"><i class="fa-solid fa-xmark"></i></button>
-        <div class="auth-logo">
-            <div class="logo-mark">V</div>
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="logo">
+                <div class="logo-mark small">V</div>
+                <span>VividCall</span>
+            </div>
+            <p>© 2026 VividCall Inc. — Final Semester Project · All systems operational</p>
         </div>
-        <h2>Welcome back</h2>
-        <p class="auth-sub">Sign in to your VividCall account</p>
-        <input type="email" placeholder="Email address" class="auth-input">
-        <input type="password" placeholder="Password" class="auth-input">
-        <button onclick="performLogin()" class="auth-btn">Sign In</button>
-        <div class="auth-alt">No account? <a onclick="showPage('signup')">Create one free</a></div>
-    </div>
-</div>
+    </footer>
 
-<div id="signup" class="page hidden auth-page">
-    <div class="auth-card">
-        <button onclick="navigate('landing')" class="auth-close"><i class="fa-solid fa-xmark"></i></button>
-        <div class="auth-logo">
-            <div class="logo-mark">V</div>
-        </div>
-        <h2>Create account</h2>
-        <p class="auth-sub">Start with a free plan — no credit card needed</p>
-        <input type="text" placeholder="Full name" class="auth-input">
-        <input type="email" placeholder="Email address" class="auth-input">
-        <input type="password" placeholder="Create password" class="auth-input">
-        <button onclick="performSignup()" class="auth-btn">Create Free Account</button>
-        <div class="auth-alt">Already have one? <a onclick="showPage('login')">Sign in</a></div>
-    </div>
-</div>
-
-<footer class="site-footer">
-    <div class="footer-inner">
-        <div class="logo">
-            <div class="logo-mark small">V</div>
-            <span>VividCall</span>
-        </div>
-        <p>© 2026 VividCall Inc. — Final Semester Project · All systems operational</p>
-    </div>
-</footer>
-
-<!-- WebRTC + PeerJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
-<script src="script.js" defer></script>
+    <!-- WebRTC + PeerJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+    <script src="script.js" defer></script>
 </body>
+
 </html>
