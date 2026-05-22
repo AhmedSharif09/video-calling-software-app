@@ -43,142 +43,12 @@ function setActive(el) {
     el.classList.add('active');
 }
 
-/* =========================================================
-   AUTH SYSTEM
-========================================================= */
-
-function performSignup() {
-
-    const name = document.getElementById('signup-name').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value.trim();
-
-    if (!name || !email || !password) {
-
-        alert("Please fill all fields");
-        return;
-    }
-
-    const userData = {
-        name,
-        email,
-        password
-    };
-
-    localStorage.setItem('vividcall_user_data', JSON.stringify(userData));
-
-    localStorage.setItem('vividcall_loggedin', 'true');
-
-    localStorage.setItem('vividcall_user', name);
-
-    alert("Account created successfully");
-
-    updateUserUI(name);
-
+function performLogin() {
     navigate('dashboard');
 }
 
-/* ========================================================= */
-
-function performLogin() {
-
-    const email = document.getElementById('login-email').value.trim();
-
-    const password = document.getElementById('login-password').value.trim();
-
-    const savedUser = JSON.parse(
-        localStorage.getItem('vividcall_user_data')
-    );
-
-    if (!savedUser) {
-
-        alert("No account found. Please signup first.");
-        return;
-    }
-
-    if (
-        email === savedUser.email &&
-        password === savedUser.password
-    ) {
-
-        localStorage.setItem('vividcall_loggedin', 'true');
-
-        localStorage.setItem(
-            'vividcall_user',
-            savedUser.name
-        );
-
-        alert("Login successful");
-
-        updateUserUI(savedUser.name);
-
-        navigate('dashboard');
-
-    } else {
-
-        alert("Invalid email or password");
-    }
-}
-
-/* =========================================================
-   UPDATE USER UI
-========================================================= */
-
-function updateUserUI(name) {
-
-    const userName = document.querySelector('.user-name');
-
-    const dashGreeting = document.querySelector('.dash-greeting');
-
-    const avatar = document.querySelector('.user-avatar');
-
-    if (userName) {
-        userName.innerText = name;
-    }
-
-    if (dashGreeting) {
-        dashGreeting.innerHTML =
-            `Good evening, ${name} 👋`;
-    }
-
-    if (avatar) {
-        avatar.innerText = name.charAt(0).toUpperCase();
-    }
-}
-
-/* =========================================================
-   AUTO LOGIN
-========================================================= */
-
-window.addEventListener('load', () => {
-
-    const loggedIn = localStorage.getItem(
-        'vividcall_loggedin'
-    );
-
-    const user = localStorage.getItem(
-        'vividcall_user'
-    );
-
-    if (loggedIn === 'true' && user) {
-
-        updateUserUI(user);
-    }
-});
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-function logout() {
-
-    localStorage.removeItem('vividcall_loggedin');
-
-    localStorage.removeItem('vividcall_user');
-
-    alert("Logged out");
-
-    navigate('landing');
+function performSignup() {
+    navigate('dashboard');
 }
 
 // ===== TOAST =====
@@ -203,6 +73,11 @@ function generateRoomId() {
         id += chars[Math.floor(Math.random() * chars.length)];
     }
     return id;
+}
+
+// Helper to scrub manual input text consistently
+function cleanRoomId(inputStr) {
+    return inputStr.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function getRoomIdFromUrl() {
@@ -237,14 +112,18 @@ function joinByCode() {
     if (!code) { showToast('Please enter a room code', 'fa-exclamation-circle'); return; }
     const name = prompt('Enter your name:', 'Guest') || 'Guest';
     myName = name.trim() || 'Guest';
-    const roomId = code.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const roomId = cleanRoomId(code);
     setRoomInUrl(roomId);
     startMeetingRoom(roomId);
 }
 
 function copyRoomLink() {
-    const roomId = generateRoomId();
+    const input = document.getElementById('join-code-input');
+    const rawCode = input ? input.value.trim() : '';
+    // Use user-provided code if present; otherwise, fallback to creating a random code
+    const roomId = rawCode ? cleanRoomId(rawCode) : generateRoomId();
     const link = getRoomLink(roomId);
+    
     navigator.clipboard.writeText(link).then(() => {
         showToast('Room link copied to clipboard!');
     }).catch(() => {
@@ -268,11 +147,6 @@ let screenStream = null;
 const connections = {};  // peerId -> MediaConnection
 const peerStreams = {};  // peerId -> MediaStream
 const peerNames = {};    // peerId -> name
-
-// Signaling: We use a shared PeerJS peer whose ID encodes the room
-// All peers in a room connect to a "room host" peer, and also to each other
-// For simplicity: first peer to enter has ID = roomId, others connect to it
-// Then the host sends them the list of other peers (via DataConnection)
 
 let myPeerId = null;
 let isRoomHost = false;
@@ -317,8 +191,6 @@ function createSilentStream() {
 }
 
 function initPeer(rid) {
-    // Try to be the room host first (use rid as PeerID)
-    // If taken, use rid + random suffix and connect to host
     const hostId = 'vividcall-' + rid;
 
     peer = new Peer(hostId, {
@@ -341,7 +213,8 @@ function initPeer(rid) {
 
     peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-            // Room exists, join as guest
+            // Host peer already taken! Gracefully destroy it to avoid socket event collision loops before guest shift
+            peer.destroy();
             joinAsGuest(rid, hostId);
         } else {
             console.error('Peer error:', err);
@@ -447,8 +320,20 @@ function handleDataConnection(conn, asHost, fromId) {
     conn.on('open', () => {
         dataConns[dcPeerId] = conn;
         if (asHost) {
-            // Host: greet and send the list of existing peers
+            // Host sends list of current room participants to newly arriving peer
             conn.send(JSON.stringify({ type: 'welcome', peers: getPeerList() }));
+            
+            // Broadcast alert to older existing room peers so they call this new client
+            const joinAlert = JSON.stringify({ 
+                type: 'peer-joined', 
+                id: conn.peer, 
+                name: conn.metadata?.name || 'Guest' 
+            });
+            Object.entries(dataConns).forEach(([pid, dChannel]) => {
+                if (pid !== conn.peer && dChannel.open) {
+                    dChannel.send(joinAlert);
+                }
+            });
         }
     });
 
@@ -459,6 +344,16 @@ function handleDataConnection(conn, asHost, fromId) {
         if (msg.type === 'hello') {
             peerNames[msg.id] = msg.name;
             conn.send(JSON.stringify({ type: 'welcome', peers: getPeerList() }));
+            
+            // Host broadcasts to older participants about this new handshake addition
+            if (asHost) {
+                const joinAlert = JSON.stringify({ type: 'peer-joined', id: msg.id, name: msg.name });
+                Object.entries(dataConns).forEach(([pid, dChannel]) => {
+                    if (pid !== msg.id && dChannel.open) {
+                        dChannel.send(joinAlert);
+                    }
+                });
+            }
         } else if (msg.type === 'welcome' && !isRoomHost) {
             // Connect to all existing peers in room
             msg.peers.forEach(p => {
@@ -794,45 +689,4 @@ window.addEventListener('load', () => {
     }
 
     console.log('%cVividCall WebRTC Engine Ready 🚀', 'color:#6366f1;font-size:16px;font-weight:bold');
-});
-
-/* ======================================================
-   AUTO JOIN ROOM FROM URL
-====================================================== */
-
-window.addEventListener('load', async () => {
-
-    const room = getRoomIdFromUrl();
-
-    if (room) {
-
-        let savedName = localStorage.getItem('vividcall_user');
-
-        if (!savedName) {
-            savedName = prompt("Enter your name") || "Guest";
-            localStorage.setItem('vividcall_user', savedName);
-        }
-
-        myName = savedName;
-
-        startMeetingRoom(room);
-    }
-});
-
-/* ======================================================
-   AUTO LOGIN
-====================================================== */
-
-window.addEventListener('load', () => {
-
-    const loggedIn = localStorage.getItem('vividcall_loggedin');
-
-    if (loggedIn === 'true') {
-
-        const user = localStorage.getItem('vividcall_user');
-
-        if (user) {
-            myName = user;
-        }
-    }
 });
