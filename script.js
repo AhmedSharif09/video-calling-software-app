@@ -1,129 +1,667 @@
+/* ======================================================
+   VividCall — WebRTC Engine with PeerJS
+   How it works:
+   1. Host creates meeting → gets a unique room ID in URL
+   2. Anyone who opens the same URL joins that room
+   3. Each peer connects to every other peer via WebRTC
+   ====================================================== */
 
-        function toggleDarkMode() {
-            alert("Premium Dark Theme is natively active to optimize device battery during heavy WebRTC video rendering.");
+// ===== NAVIGATION SYSTEM =====
+let currentPage = 'landing';
+let myName = 'You';
+
+function navigate(page) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const navEl = document.getElementById('nav-' + (page === 'landing' ? 'home' : page));
+    if (navEl) navEl.classList.add('active');
+
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    const target = document.getElementById(page);
+    if (target) {
+        target.classList.remove('hidden');
+        currentPage = page;
+    }
+    window.scrollTo(0, 0);
+
+    // Hide footer in meeting room and dashboard
+    const footer = document.querySelector('.site-footer');
+    if (footer) footer.style.display = (page === 'meeting-room' || page === 'dashboard') ? 'none' : '';
+    const navbar = document.getElementById('navbar');
+    if (navbar) navbar.style.display = page === 'meeting-room' ? 'none' : '';
+}
+
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    const target = document.getElementById(page);
+    if (target) target.classList.remove('hidden');
+    const footer = document.querySelector('.site-footer');
+    if (footer) footer.style.display = '';
+}
+
+function setActive(el) {
+    document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function performLogin() {
+    navigate('dashboard');
+}
+
+function performSignup() {
+    navigate('dashboard');
+}
+
+// ===== TOAST =====
+function showToast(msg, icon = 'fa-check-circle') {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ===== ROOM ID UTILITIES =====
+function generateRoomId() {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let id = '';
+    for (let i = 0; i < 8; i++) {
+        id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return id;
+}
+
+function getRoomIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('room') || null;
+}
+
+function setRoomInUrl(roomId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomId);
+    window.history.pushState({}, '', url.toString());
+}
+
+function getRoomLink(roomId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomId);
+    return url.toString();
+}
+
+// ===== CREATE / JOIN FROM LANDING =====
+function createMeeting() {
+    const name = prompt('Enter your name:', 'Muhammad') || 'Muhammad';
+    myName = name.trim() || 'User';
+    const roomId = generateRoomId();
+    setRoomInUrl(roomId);
+    startMeetingRoom(roomId);
+}
+
+function joinByCode() {
+    const input = document.getElementById('join-code-input');
+    const code = input ? input.value.trim() : '';
+    if (!code) { showToast('Please enter a room code', 'fa-exclamation-circle'); return; }
+    const name = prompt('Enter your name:', 'Guest') || 'Guest';
+    myName = name.trim() || 'Guest';
+    const roomId = code.toLowerCase().replace(/[^a-z0-9]/g, '');
+    setRoomInUrl(roomId);
+    startMeetingRoom(roomId);
+}
+
+function copyRoomLink() {
+    const roomId = generateRoomId();
+    const link = getRoomLink(roomId);
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Room link copied to clipboard!');
+    }).catch(() => {
+        prompt('Copy this link:', link);
+    });
+}
+
+// ===== WEBRTC ENGINE =====
+let localStream = null;
+let peer = null;
+let roomId = null;
+let timerInterval = null;
+let seconds = 0;
+
+let micOn = true;
+let camOn = true;
+let screenSharing = false;
+let screenStream = null;
+
+// Track all active peer connections and their streams
+const connections = {};  // peerId -> MediaConnection
+const peerStreams = {};  // peerId -> MediaStream
+const peerNames = {};    // peerId -> name
+
+// Signaling: We use a shared PeerJS peer whose ID encodes the room
+// All peers in a room connect to a "room host" peer, and also to each other
+// For simplicity: first peer to enter has ID = roomId, others connect to it
+// Then the host sends them the list of other peers (via DataConnection)
+
+let myPeerId = null;
+let isRoomHost = false;
+let hostConn = null; // DataConnection to host (if not host)
+const dataConns = {}; // peerId -> DataConnection (for signaling/chat)
+
+async function startMeetingRoom(rid) {
+    roomId = rid;
+    navigate('meeting-room');
+
+    document.getElementById('room-title').textContent = 'Room: ' + rid;
+    document.getElementById('room-id-display').textContent = rid;
+
+    setConnStatus('Accessing camera...');
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch (e) {
+        console.warn('Camera/mic denied, using silent stream', e);
+        localStream = await createSilentStream();
+    }
+
+    addVideoTile('local', localStream, myName + ' (You)', true);
+    updateGridLayout();
+    startTimer();
+    setConnStatus('Connecting to room...');
+    initPeer(rid);
+}
+
+function createSilentStream() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640; canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(0, 0, 640, 480);
+    const videoStream = canvas.captureStream(15);
+    const audioCtx = new AudioContext();
+    const dest = audioCtx.createMediaStreamDestination();
+    const silentTrack = dest.stream.getAudioTracks()[0];
+    videoStream.addTrack(silentTrack);
+    return Promise.resolve(videoStream);
+}
+
+function initPeer(rid) {
+    // Try to be the room host first (use rid as PeerID)
+    // If taken, use rid + random suffix and connect to host
+    const hostId = 'vividcall-' + rid;
+
+    peer = new Peer(hostId, {
+        debug: 0,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+        }
+    });
+
+    peer.on('open', (id) => {
+        myPeerId = id;
+        isRoomHost = true;
+        setConnStatus('You are the host. Share the link to invite others!', true);
+        setupHostListeners();
+    });
+
+    peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+            // Room exists, join as guest
+            joinAsGuest(rid, hostId);
+        } else {
+            console.error('Peer error:', err);
+            setConnStatus('Connection error: ' + err.message);
+        }
+    });
+}
+
+function setupHostListeners() {
+    // Host receives incoming calls from joining guests
+    peer.on('call', (call) => {
+        call.answer(localStream);
+        handleIncomingCall(call);
+    });
+
+    // Host receives data connections for signaling
+    peer.on('connection', (conn) => {
+        handleDataConnection(conn, true);
+    });
+}
+
+function joinAsGuest(rid, hostId) {
+    const guestId = 'vividcall-' + rid + '-' + generateRoomId();
+    peer = new Peer(guestId, {
+        debug: 0,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
+    });
+
+    peer.on('open', (id) => {
+        myPeerId = id;
+        isRoomHost = false;
+        setConnStatus('Joining room...');
+
+        // Connect to host via data channel first (send our name + id)
+        const dc = peer.connect(hostId, { reliable: true, metadata: { name: myName } });
+        dc.on('open', () => {
+            dataConns[hostId] = dc;
+            dc.send(JSON.stringify({ type: 'hello', name: myName, id: myPeerId }));
+        });
+        handleDataConnection(dc, false, hostId);
+
+        // Call the host with our media
+        setTimeout(() => {
+            const call = peer.call(hostId, localStream, { metadata: { name: myName } });
+            handleIncomingCall(call);
+        }, 500);
+
+        // Listen for calls from other peers the host tells us about
+        peer.on('call', (call) => {
+            call.answer(localStream);
+            handleIncomingCall(call);
+        });
+        peer.on('connection', (conn) => {
+            handleDataConnection(conn, false);
+        });
+    });
+
+    peer.on('error', (err) => {
+        setConnStatus('Error joining: ' + err.message);
+    });
+}
+
+function handleIncomingCall(call) {
+    const remotePeerId = call.peer;
+    const peerName = call.metadata?.name || 'Guest';
+    peerNames[remotePeerId] = peerName;
+
+    call.on('stream', (remoteStream) => {
+        peerStreams[remotePeerId] = remoteStream;
+        connections[remotePeerId] = call;
+
+        // Add or update video tile
+        const existing = document.getElementById('tile-' + remotePeerId);
+        if (!existing) {
+            addVideoTile(remotePeerId, remoteStream, peerName, false);
+            updateGridLayout();
+        } else {
+            const video = existing.querySelector('video');
+            if (video) video.srcObject = remoteStream;
         }
 
-        function navigate(page) {
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('nav-active'));
-            if (page === 'landing' && document.getElementById('nav-home')) document.getElementById('nav-home').classList.add('nav-active');
-            if (page === 'features' && document.getElementById('nav-features')) document.getElementById('nav-features').classList.add('nav-active');
-            if (page === 'pricing' && document.getElementById('nav-pricing')) document.getElementById('nav-pricing').classList.add('nav-active');
-            if (page === 'dashboard' && document.getElementById('nav-dashboard')) document.getElementById('nav-dashboard').classList.add('nav-active');
-            
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            const targetPage = document.getElementById(page);
-            if (targetPage) targetPage.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        }
+        setConnStatus('Connected! ' + (Object.keys(peerStreams).length + 1) + ' people in room', true);
+    });
 
-        function showPage(page) {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            const target = document.getElementById(page);
-            if (target) target.classList.remove('hidden');
-        }
+    call.on('close', () => {
+        removePeerTile(remotePeerId);
+    });
 
-        function setActive(el) {
-            document.querySelectorAll('#dashboard nav a').forEach(a => {
-                a.classList.remove('bg-[#312e81]', 'text-white');
-                a.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+    call.on('error', (err) => {
+        console.warn('Call error:', err);
+        removePeerTile(remotePeerId);
+    });
+}
+
+function handleDataConnection(conn, asHost, fromId) {
+    const dcPeerId = fromId || conn.peer;
+
+    conn.on('open', () => {
+        dataConns[dcPeerId] = conn;
+        if (asHost) {
+            // Host: greet and send the list of existing peers
+            conn.send(JSON.stringify({ type: 'welcome', peers: getPeerList() }));
+        }
+    });
+
+    conn.on('data', (raw) => {
+        let msg;
+        try { msg = JSON.parse(raw); } catch { return; }
+
+        if (msg.type === 'hello') {
+            peerNames[msg.id] = msg.name;
+            conn.send(JSON.stringify({ type: 'welcome', peers: getPeerList() }));
+        } else if (msg.type === 'welcome' && !isRoomHost) {
+            // Connect to all existing peers in room
+            msg.peers.forEach(p => {
+                if (p.id !== myPeerId && !connections[p.id]) {
+                    connectToPeer(p.id, p.name);
+                }
             });
-            el.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
-            el.classList.add('bg-[#312e81]', 'text-white');
-        }
-
-        function performLogin() {
-            alert("WebRTC Security Token Handshake Successful! Welcome.");
-            showPage('dashboard');
-            navigate('dashboard');
-        }
-
-        function performSignup() {
-            alert("Database Entry Created Successfully! Redirecting to System Console.");
-            showPage('dashboard');
-            navigate('dashboard');
-        }
-
-        let localStream = null;
-        let timerInterval = null;
-
-        async function startInstantMeeting() {
-            showPage('meeting-room');
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-                initVideoGrid();
-                startTimer();
-            } catch(e) {
-                alert("Notice: Camera/Microphone stream permission error. Serving simulated visual loop for grading framework.");
-                initMockVideoGrid();
-                startTimer();
+        } else if (msg.type === 'chat') {
+            displayChatMsg(msg.name, msg.text, false);
+        } else if (msg.type === 'peer-joined') {
+            if (msg.id !== myPeerId && !connections[msg.id]) {
+                connectToPeer(msg.id, msg.name);
             }
+        } else if (msg.type === 'peer-left') {
+            removePeerTile(msg.id);
         }
+    });
 
-        function initVideoGrid() {
-            const grid = document.getElementById('video-grid');
-            grid.innerHTML = `
-                <div class="meeting-video bg-zinc-900 aspect-video relative active-speaker">
-                    <video autoplay playsinline muted class="w-full h-full object-cover" id="local-video"></video>
-                    <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-medium">Muhammad (You)</div>
-                </div>
-            `;
-            if (localStream) document.getElementById('local-video').srcObject = localStream;
-        }
+    conn.on('close', () => {
+        delete dataConns[dcPeerId];
+        removePeerTile(dcPeerId);
+    });
+}
 
-        function initMockVideoGrid() {
-            const grid = document.getElementById('video-grid');
-            grid.innerHTML = `
-                <div class="meeting-video bg-gradient-to-tr from-slate-900 to-purple-950 aspect-video relative active-speaker flex items-center justify-center">
-                    <div class="text-center">
-                        <i class="fa-solid fa-user-slash text-4xl text-purple-400 mb-2"></i>
-                        <div class="text-sm font-semibold">Camera Active (No Hardware detected)</div>
-                    </div>
-                    <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-medium">Muhammad (You)</div>
-                </div>
-            `;
-        }
+function connectToPeer(targetId, targetName) {
+    if (connections[targetId] || targetId === myPeerId) return;
+    peerNames[targetId] = targetName || 'Guest';
 
-        function startTimer() {
-            let seconds = 0;
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                seconds++;
-                const m = Math.floor(seconds/60).toString().padStart(2,'0');
-                const s = (seconds%60).toString().padStart(2,'0');
-                document.getElementById('timer').textContent = `${m}:${s}`;
-            }, 1000);
-        }
+    const call = peer.call(targetId, localStream, { metadata: { name: myName } });
+    handleIncomingCall(call);
 
-        function toggleMute() { alert("Microphone track state changed."); }
-        function toggleVideo() { alert("Video media stream track toggled."); }
-        function toggleChatPanel() { document.getElementById('chat-panel').classList.toggle('hidden'); }
+    const dc = peer.connect(targetId, { reliable: true });
+    dc.on('open', () => { dataConns[targetId] = dc; });
+    handleDataConnection(dc, false, targetId);
+}
 
-        function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            if (!input.value.trim()) return;
-            const body = document.getElementById('chat-body');
-            body.innerHTML += `
-                <div class="flex flex-col items-end">
-                    <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] break-words">
-                        ${input.value}
-                    </div>
-                    <span class="text-[10px] text-slate-500 mt-1">Just now</span>
-                </div>
-            `;
-            body.scrollTop = body.scrollHeight;
-            input.value = '';
-        }
+function getPeerList() {
+    const list = [{ id: myPeerId, name: myName }];
+    Object.keys(connections).forEach(pid => {
+        list.push({ id: pid, name: peerNames[pid] || 'Guest' });
+    });
+    return list;
+}
 
-        function endMeeting() {
-            if (confirm("Are you sure you want to disconnect from this conference session?")) {
-                if (localStream) localStream.getTracks().forEach(t => t.stop());
-                if (timerInterval) clearInterval(timerInterval);
-                navigate('dashboard');
+// ===== VIDEO TILES =====
+const AVATAR_COLORS = [
+    'linear-gradient(135deg,#6366f1,#8b5cf6)',
+    'linear-gradient(135deg,#0ea5e9,#06b6d4)',
+    'linear-gradient(135deg,#f43f5e,#ec4899)',
+    'linear-gradient(135deg,#10b981,#059669)',
+    'linear-gradient(135deg,#f59e0b,#d97706)',
+    'linear-gradient(135deg,#8b5cf6,#ec4899)',
+];
+let colorIndex = 0;
+
+function addVideoTile(id, stream, name, isLocal) {
+    const grid = document.getElementById('video-grid');
+    const tile = document.createElement('div');
+    tile.className = 'video-tile';
+    tile.id = 'tile-' + id;
+
+    const color = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
+    colorIndex++;
+
+    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+    tile.innerHTML = `
+        <video autoplay ${isLocal ? 'muted' : ''} playsinline></video>
+        <div class="no-cam" style="display:none">
+            <div class="peer-avatar" style="background:${color}">${initials}</div>
+            <span style="font-size:0.8rem;color:var(--text-3)">${name}</span>
+        </div>
+        <div class="tile-name">
+            ${name}
+        </div>
+    `;
+
+    const video = tile.querySelector('video');
+    video.srcObject = stream;
+
+    // If video track is missing or off, show avatar
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack || !videoTrack.enabled) {
+        tile.querySelector('.no-cam').style.display = 'flex';
+        video.style.display = 'none';
+    }
+
+    // Speaking indicator (local only - for demo)
+    if (isLocal) {
+        tile.classList.add('speaking');
+        setTimeout(() => tile.classList.remove('speaking'), 3000);
+    }
+
+    grid.appendChild(tile);
+}
+
+function removePeerTile(peerId) {
+    const tile = document.getElementById('tile-' + peerId);
+    if (tile) tile.remove();
+    delete peerStreams[peerId];
+    delete connections[peerId];
+    delete peerNames[peerId];
+    updateGridLayout();
+    const count = document.querySelectorAll('.video-tile').length;
+    setConnStatus(count + ' people in room', true);
+}
+
+function updateGridLayout() {
+    const grid = document.getElementById('video-grid');
+    const count = grid.querySelectorAll('.video-tile').length;
+    grid.className = 'video-grid count-' + Math.min(count, 6);
+}
+
+// ===== CONTROLS =====
+function toggleMic() {
+    micOn = !micOn;
+    if (localStream) {
+        localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+    }
+    const btn = document.getElementById('mic-btn');
+    btn.querySelector('i').className = micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash';
+    btn.className = 'ctrl-btn ' + (micOn ? 'active' : 'off');
+    btn.querySelector('span').textContent = micOn ? 'Mic' : 'Muted';
+}
+
+function toggleCam() {
+    camOn = !camOn;
+    if (localStream) {
+        localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+    }
+    const btn = document.getElementById('cam-btn');
+    btn.querySelector('i').className = camOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash';
+    btn.className = 'ctrl-btn ' + (camOn ? 'active' : 'off');
+    btn.querySelector('span').textContent = camOn ? 'Camera' : 'Off';
+
+    // Show/hide local avatar
+    const localTile = document.getElementById('tile-local');
+    if (localTile) {
+        localTile.querySelector('video').style.display = camOn ? 'block' : 'none';
+        localTile.querySelector('.no-cam').style.display = camOn ? 'none' : 'flex';
+    }
+}
+
+async function toggleScreen() {
+    const btn = document.getElementById('screen-btn');
+    if (!screenSharing) {
+        try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            screenSharing = true;
+            btn.classList.add('active');
+            btn.querySelector('span').textContent = 'Stop Share';
+
+            const screenTrack = screenStream.getVideoTracks()[0];
+            // Replace video track in all connections
+            Object.values(connections).forEach(call => {
+                if (call.peerConnection) {
+                    const sender = call.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) sender.replaceTrack(screenTrack);
+                }
+            });
+
+            // Update local tile to show screen
+            const localVideo = document.querySelector('#tile-local video');
+            if (localVideo) {
+                localVideo.srcObject = screenStream;
+                localVideo.style.display = 'block';
+                document.querySelector('#tile-local .no-cam').style.display = 'none';
             }
-        }
 
-        window.onload = () => {
-            showPage('landing');
-            console.log("%cVividCall - Advanced Semester Architecture Online! 🔥", "color:#a855f7;font-size:18px;font-weight:bold");
-        };
-  
+            screenTrack.onended = () => stopScreenShare();
+        } catch (e) {
+            showToast('Screen sharing cancelled', 'fa-exclamation-circle');
+        }
+    } else {
+        stopScreenShare();
+    }
+}
+
+function stopScreenShare() {
+    screenSharing = false;
+    const btn = document.getElementById('screen-btn');
+    btn.classList.remove('active');
+    btn.querySelector('span').textContent = 'Share';
+
+    if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+    }
+
+    // Restore camera
+    if (localStream) {
+        const camTrack = localStream.getVideoTracks()[0];
+        if (camTrack) {
+            Object.values(connections).forEach(call => {
+                if (call.peerConnection) {
+                    const sender = call.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) sender.replaceTrack(camTrack);
+                }
+            });
+        }
+        const localVideo = document.querySelector('#tile-local video');
+        if (localVideo) localVideo.srcObject = localStream;
+    }
+}
+
+function toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    panel.classList.toggle('hidden');
+    const btn = document.getElementById('chat-btn');
+    btn.classList.toggle('active', !panel.classList.contains('hidden'));
+}
+
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    displayChatMsg(myName, text, true);
+
+    // Broadcast to all peers via data channels
+    const msg = JSON.stringify({ type: 'chat', name: myName, text });
+    Object.values(dataConns).forEach(dc => {
+        try { if (dc.open) dc.send(msg); } catch (e) {}
+    });
+}
+
+function displayChatMsg(name, text, isMe) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (isMe ? 'me' : '');
+    div.innerHTML = `
+        <div class="msg-bubble">${escapeHtml(text)}</div>
+        <div class="msg-meta">${isMe ? 'You' : escapeHtml(name)} · Just now</div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+
+    // Show chat panel briefly if hidden
+    const panel = document.getElementById('chat-panel');
+    if (panel.classList.contains('hidden') && !isMe) {
+        showToast(name + ': ' + text, 'fa-comment-dots');
+    }
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function endMeeting() {
+    if (!confirm('Leave this meeting?')) return;
+
+    // Notify peers
+    const msg = JSON.stringify({ type: 'peer-left', id: myPeerId });
+    Object.values(dataConns).forEach(dc => {
+        try { if (dc.open) dc.send(msg); } catch (e) {}
+    });
+
+    cleanupMeeting();
+}
+
+function cleanupMeeting() {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+    if (peer) peer.destroy();
+    if (timerInterval) clearInterval(timerInterval);
+
+    localStream = null; screenStream = null; peer = null; timerInterval = null;
+    seconds = 0; micOn = true; camOn = true; screenSharing = false;
+
+    Object.keys(connections).forEach(k => delete connections[k]);
+    Object.keys(peerStreams).forEach(k => delete peerStreams[k]);
+    Object.keys(dataConns).forEach(k => delete dataConns[k]);
+    Object.keys(peerNames).forEach(k => delete peerNames[k]);
+
+    document.getElementById('video-grid').innerHTML = '';
+    document.getElementById('chat-messages').innerHTML = '';
+    colorIndex = 0;
+
+    // Remove room from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('room');
+    window.history.pushState({}, '', url.toString());
+
+    navigate('dashboard');
+}
+
+// ===== TIMER =====
+function startTimer() {
+    seconds = 0;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').textContent = m + ':' + s;
+    }, 1000);
+}
+
+// ===== CONNECTION STATUS =====
+function setConnStatus(msg, hide = false) {
+    const el = document.getElementById('conn-status');
+    if (!el) return;
+    el.innerHTML = hide 
+        ? `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> ${msg}`
+        : `<i class="fa-solid fa-circle-notch fa-spin"></i> ${msg}`;
+    el.classList.remove('hidden');
+    if (hide) {
+        setTimeout(() => el.classList.add('hidden'), 4000);
+    }
+}
+
+// ===== COPY CURRENT ROOM LINK =====
+function copyCurrentRoomLink() {
+    const link = getRoomLink(roomId);
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Meeting link copied! Share it to invite others');
+    }).catch(() => {
+        prompt('Copy this link to invite others:', link);
+    });
+}
+
+// ===== INIT ON LOAD =====
+window.addEventListener('load', () => {
+    // Check if there's a room ID in the URL — auto-join
+    const rid = getRoomIdFromUrl();
+    if (rid) {
+        const name = prompt('Enter your name to join the meeting:', 'Guest') || 'Guest';
+        myName = name.trim() || 'Guest';
+        startMeetingRoom(rid);
+    } else {
+        navigate('landing');
+    }
+
+    console.log('%cVividCall WebRTC Engine Ready 🚀', 'color:#6366f1;font-size:16px;font-weight:bold');
+});
