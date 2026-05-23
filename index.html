@@ -25,7 +25,7 @@
                 <div class="logo-mark">V</div>
                 <span>VividCall</span>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a onclick="navigate('landing')" id="nav-home" class="nav-link active">Home</a>
                 <a onclick="navigate('features')" id="nav-features" class="nav-link">Features</a>
                 <a onclick="navigate('pricing')" id="nav-pricing" class="nav-link">Pricing</a>
@@ -34,6 +34,9 @@
             <div class="nav-actions">
                 <button onclick="showPage('login')" class="btn-ghost">Login</button>
                 <button onclick="showPage('signup')" class="btn-primary">Get Started</button>
+                <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileNav()" aria-label="Menu">
+                    <span></span><span></span><span></span>
+                </button>
             </div>
         </div>
     </nav>
@@ -439,7 +442,10 @@
                 <div class="room-id-badge" id="room-id-display"></div>
             </div>
             <div class="room-center">
-                <div class="room-timer" id="timer">00:00</div>
+                <div class="participants-count-badge" id="participants-count-badge" onclick="toggleParticipants()" title="View participants">
+                    <i class="fa-solid fa-users"></i>
+                    <span id="participants-count">1</span> Students
+                </div>
             </div>
             <div class="room-actions-top">
                 <button onclick="copyCurrentRoomLink()" class="room-btn-sm" title="Copy meeting link">
@@ -466,6 +472,15 @@
                     <button onclick="sendChat()" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
+
+            <!-- Participants Panel -->
+            <div id="participants-panel" class="participants-panel hidden">
+                <div class="chat-header">
+                    <span>Students (<span id="participants-count-panel">1</span>)</span>
+                    <button onclick="toggleParticipants()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="participants-list" class="participants-list"></div>
+            </div>
         </div>
 
         <div class="room-controls">
@@ -485,6 +500,18 @@
                 <button id="chat-btn" onclick="toggleChat()" class="ctrl-btn" title="Chat">
                     <i class="fa-solid fa-comment-dots"></i>
                     <span>Chat</span>
+                </button>
+                <button id="participants-btn" onclick="toggleParticipants()" class="ctrl-btn" title="Students">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Students</span>
+                </button>
+                <button id="hand-btn" onclick="raiseHand()" class="ctrl-btn" title="Raise Hand">
+                    <i class="fa-solid fa-hand"></i>
+                    <span>Raise Hand</span>
+                </button>
+                <button id="settings-btn" onclick="openDeviceSettings()" class="ctrl-btn" title="Device Settings">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Settings</span>
                 </button>
             </div>
             <button onclick="endMeeting()" class="ctrl-end">
@@ -585,6 +612,30 @@
             <p>© 2026 VividCall Inc. — Final Semester Project · All systems operational</p>
         </div>
     </footer>
+
+    <!-- Device Settings Modal -->
+    <div id="device-settings-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-sliders"></i> Device Settings</h3>
+                <button onclick="closeDeviceSettings()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="device-group">
+                    <label><i class="fa-solid fa-microphone"></i> Microphone</label>
+                    <select id="mic-select" class="device-select"></select>
+                </div>
+                <div class="device-group">
+                    <label><i class="fa-solid fa-video"></i> Camera</label>
+                    <select id="cam-select" class="device-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDeviceSettings()" class="btn-ghost">Cancel</button>
+                <button onclick="applyDeviceSettings()" class="btn-primary">Apply Changes</button>
+            </div>
+        </div>
+    </div>
 
     <!-- WebRTC + PeerJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>

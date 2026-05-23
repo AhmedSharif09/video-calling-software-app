@@ -10,6 +10,23 @@
 let currentPage = 'landing';
 let myName = 'You';
 
+function toggleMobileNav() {
+    const links = document.getElementById('nav-links');
+    const btn = document.getElementById('hamburger-btn');
+    links.classList.toggle('mobile-open');
+    btn.classList.toggle('open');
+}
+
+// Close mobile nav when a link is clicked
+document.addEventListener('click', (e) => {
+    const links = document.getElementById('nav-links');
+    const btn = document.getElementById('hamburger-btn');
+    if (links && btn && !links.contains(e.target) && !btn.contains(e.target)) {
+        links.classList.remove('mobile-open');
+        btn.classList.remove('open');
+    }
+});
+
 function navigate(page) {
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     const navEl = document.getElementById('nav-' + (page === 'landing' ? 'home' : page));
@@ -142,6 +159,7 @@ let micOn = true;
 let camOn = true;
 let screenSharing = false;
 let screenStream = null;
+let handRaised = false;
 
 // Track all active peer connections and their streams
 const connections = {};  // peerId -> MediaConnection
@@ -171,7 +189,8 @@ async function startMeetingRoom(rid) {
 
     addVideoTile('local', localStream, myName + ' (You)', true);
     updateGridLayout();
-    startTimer();
+    updateParticipantsCount();
+    // Timer removed — meetings have unlimited duration
     setConnStatus('Connecting to room...');
     initPeer(rid);
 }
@@ -363,6 +382,23 @@ function handleDataConnection(conn, asHost, fromId) {
             });
         } else if (msg.type === 'chat') {
             displayChatMsg(msg.name, msg.text, false);
+            // Host forwards chat to all other peers
+            if (isRoomHost) {
+                const fwd = JSON.stringify(msg);
+                Object.entries(dataConns).forEach(([pid, dChannel]) => {
+                    if (pid !== dcPeerId && dChannel.open) { try { dChannel.send(fwd); } catch(e){} }
+                });
+            }
+        } else if (msg.type === 'hand-raise') {
+            updateHandIndicator(msg.id, msg.raised);
+            if (msg.raised) showToast(escapeHtml(msg.name) + ' raised their hand ✋', 'fa-hand');
+            // Host forwards to all other peers
+            if (isRoomHost) {
+                const fwd = JSON.stringify(msg);
+                Object.entries(dataConns).forEach(([pid, dChannel]) => {
+                    if (pid !== dcPeerId && dChannel.open) { try { dChannel.send(fwd); } catch(e){} }
+                });
+            }
         } else if (msg.type === 'peer-joined') {
             if (msg.id !== myPeerId && !connections[msg.id]) {
                 connectToPeer(msg.id, msg.name);
@@ -448,6 +484,7 @@ function addVideoTile(id, stream, name, isLocal) {
     }
 
     grid.appendChild(tile);
+    updateParticipantsCount();
 }
 
 function removePeerTile(peerId) {
@@ -457,6 +494,7 @@ function removePeerTile(peerId) {
     delete connections[peerId];
     delete peerNames[peerId];
     updateGridLayout();
+    updateParticipantsCount();
     const count = document.querySelectorAll('.video-tile').length;
     setConnStatus(count + ' people in room', true);
 }
@@ -561,6 +599,12 @@ function stopScreenShare() {
 
 function toggleChat() {
     const panel = document.getElementById('chat-panel');
+    // Close participants if open
+    const pPanel = document.getElementById('participants-panel');
+    if (pPanel) { pPanel.classList.add('hidden'); }
+    const pBtn = document.getElementById('participants-btn');
+    if (pBtn) pBtn.classList.remove('active');
+
     panel.classList.toggle('hidden');
     const btn = document.getElementById('chat-btn');
     btn.classList.toggle('active', !panel.classList.contains('hidden'));
@@ -622,7 +666,7 @@ function cleanupMeeting() {
     if (timerInterval) clearInterval(timerInterval);
 
     localStream = null; screenStream = null; peer = null; timerInterval = null;
-    seconds = 0; micOn = true; camOn = true; screenSharing = false;
+    seconds = 0; micOn = true; camOn = true; screenSharing = false; handRaised = false;
 
     Object.keys(connections).forEach(k => delete connections[k]);
     Object.keys(peerStreams).forEach(k => delete peerStreams[k]);
@@ -641,7 +685,195 @@ function cleanupMeeting() {
     navigate('dashboard');
 }
 
-// ===== TIMER =====
+// ===== PARTICIPANTS PANEL =====
+function toggleParticipants() {
+    const panel = document.getElementById('participants-panel');
+    // Close chat if open
+    const chatPanel = document.getElementById('chat-panel');
+    chatPanel.classList.add('hidden');
+    document.getElementById('chat-btn').classList.remove('active');
+
+    panel.classList.toggle('hidden');
+    const btn = document.getElementById('participants-btn');
+    btn.classList.toggle('active', !panel.classList.contains('hidden'));
+    if (!panel.classList.contains('hidden')) updateParticipantsList();
+}
+
+function updateParticipantsCount() {
+    const total = 1 + Object.keys(connections).length;
+    const badge = document.getElementById('participants-count');
+    const panelCount = document.getElementById('participants-count-panel');
+    if (badge) badge.textContent = total;
+    if (panelCount) panelCount.textContent = total;
+    // Refresh list if panel is open
+    const panel = document.getElementById('participants-panel');
+    if (panel && !panel.classList.contains('hidden')) updateParticipantsList();
+}
+
+function updateParticipantsList() {
+    const list = document.getElementById('participants-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    // Add myself first
+    const myItem = document.createElement('div');
+    myItem.className = 'participant-item';
+    myItem.innerHTML = `
+        <div class="participant-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">${getInitials(myName)}</div>
+        <span class="participant-name">${escapeHtml(myName)} <span class="you-tag">You</span></span>
+        ${handRaised ? '<span class="hand-badge">✋</span>' : ''}
+    `;
+    list.appendChild(myItem);
+
+    // Add all connected peers
+    Object.keys(peerNames).forEach((pid, idx) => {
+        const name = peerNames[pid] || 'Guest';
+        const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+        const item = document.createElement('div');
+        item.className = 'participant-item';
+        item.id = 'plist-' + pid;
+        const handEl = document.getElementById('tile-' + pid);
+        const isHandRaised = handEl && handEl.querySelector('.hand-indicator');
+        item.innerHTML = `
+            <div class="participant-avatar" style="background:${color}">${getInitials(name)}</div>
+            <span class="participant-name">${escapeHtml(name)}</span>
+            ${isHandRaised ? '<span class="hand-badge">✋</span>' : ''}
+        `;
+        list.appendChild(item);
+    });
+}
+
+function getInitials(name) {
+    return (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+// ===== HAND RAISE =====
+function raiseHand() {
+    handRaised = !handRaised;
+    const btn = document.getElementById('hand-btn');
+    btn.classList.toggle('active', handRaised);
+    btn.querySelector('i').style.color = handRaised ? 'var(--amber)' : '';
+    btn.querySelector('span').textContent = handRaised ? 'Lower Hand' : 'Raise Hand';
+
+    updateHandIndicator('local', handRaised);
+
+    const msg = JSON.stringify({ type: 'hand-raise', id: myPeerId, name: myName, raised: handRaised });
+    Object.values(dataConns).forEach(dc => { try { if (dc.open) dc.send(msg); } catch(e){} });
+
+    if (handRaised) showToast('You raised your hand ✋', 'fa-hand');
+    updateParticipantsCount();
+}
+
+function updateHandIndicator(tileId, raised) {
+    const tile = document.getElementById('tile-' + tileId);
+    if (!tile) return;
+    let indicator = tile.querySelector('.hand-indicator');
+    if (raised) {
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'hand-indicator';
+            indicator.textContent = '✋';
+            tile.appendChild(indicator);
+        }
+    } else {
+        if (indicator) indicator.remove();
+    }
+}
+
+// ===== DEVICE SETTINGS =====
+async function openDeviceSettings() {
+    const modal = document.getElementById('device-settings-modal');
+    modal.classList.remove('hidden');
+
+    try {
+        // Request permission first so labels are available
+        await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => {});
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const micSelect = document.getElementById('mic-select');
+        const camSelect = document.getElementById('cam-select');
+        micSelect.innerHTML = '';
+        camSelect.innerHTML = '';
+
+        let micCount = 1, camCount = 1;
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            if (device.kind === 'audioinput') {
+                option.textContent = device.label || 'Microphone ' + micCount++;
+                // Mark current
+                if (localStream) {
+                    const curTrack = localStream.getAudioTracks()[0];
+                    if (curTrack && curTrack.getSettings().deviceId === device.deviceId) option.selected = true;
+                }
+                micSelect.appendChild(option);
+            } else if (device.kind === 'videoinput') {
+                option.textContent = device.label || 'Camera ' + camCount++;
+                if (localStream) {
+                    const curTrack = localStream.getVideoTracks()[0];
+                    if (curTrack && curTrack.getSettings().deviceId === device.deviceId) option.selected = true;
+                }
+                camSelect.appendChild(option);
+            }
+        });
+
+        if (!micSelect.options.length) micSelect.innerHTML = '<option value="">No microphone found</option>';
+        if (!camSelect.options.length) camSelect.innerHTML = '<option value="">No camera found</option>';
+    } catch (e) {
+        showToast('Could not list devices', 'fa-exclamation-circle');
+    }
+}
+
+function closeDeviceSettings() {
+    document.getElementById('device-settings-modal').classList.add('hidden');
+}
+
+async function applyDeviceSettings() {
+    const micId = document.getElementById('mic-select').value;
+    const camId = document.getElementById('cam-select').value;
+
+    try {
+        const constraints = {
+            audio: micId ? { deviceId: { exact: micId } } : true,
+            video: camId ? { deviceId: { exact: camId } } : true
+        };
+        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        // Stop old local tracks
+        if (localStream) localStream.getTracks().forEach(t => t.stop());
+        localStream = newStream;
+
+        // Restore mute/cam states
+        localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+        localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+
+        // Update local video tile
+        const localVideo = document.querySelector('#tile-local video');
+        if (localVideo) {
+            localVideo.srcObject = newStream;
+            localVideo.style.display = camOn ? 'block' : 'none';
+            const noCam = document.querySelector('#tile-local .no-cam');
+            if (noCam) noCam.style.display = camOn ? 'none' : 'flex';
+        }
+
+        // Replace tracks in all active peer connections
+        Object.values(connections).forEach(call => {
+            if (call.peerConnection) {
+                const senders = call.peerConnection.getSenders();
+                newStream.getTracks().forEach(track => {
+                    const sender = senders.find(s => s.track && s.track.kind === track.kind);
+                    if (sender) sender.replaceTrack(track).catch(e => console.warn('replaceTrack error:', e));
+                });
+            }
+        });
+
+        showToast('Devices switched successfully!', 'fa-check-circle');
+        closeDeviceSettings();
+    } catch (e) {
+        showToast('Could not switch device: ' + e.message, 'fa-exclamation-circle');
+    }
+}
+
+// ===== TIMER (kept but not called — meetings are unlimited) =====
 function startTimer() {
     seconds = 0;
     if (timerInterval) clearInterval(timerInterval);
