@@ -1,5 +1,5 @@
 /* ======================================================
-   VividCall — WebRTC Engine with PeerJS
+   Adeeb Meet — WebRTC Engine with PeerJS
    How it works:
    1. Host creates meeting → gets a unique room ID in URL
    2. Anyone who opens the same URL joins that room
@@ -920,5 +920,5 @@ window.addEventListener('load', () => {
         navigate('landing');
     }
 
-    console.log('%cVividCall WebRTC Engine Ready 🚀', 'color:#6366f1;font-size:16px;font-weight:bold');
+    console.log('%cAdeeb Meet WebRTC Engine Ready 🚀', 'color:#6366f1;font-size:16px;font-weight:bold');
 });
