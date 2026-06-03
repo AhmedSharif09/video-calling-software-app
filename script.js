@@ -69,6 +69,7 @@ function performSignup() {
 }
 
 // ===== TOAST =====
+let _toastTimer = null;
 function showToast(msg, icon = 'fa-check-circle') {
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -79,7 +80,11 @@ function showToast(msg, icon = 'fa-check-circle') {
     }
     toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        _toastTimer = null;
+    }, 3000);
 }
 
 // ===== ROOM ID UTILITIES =====
