@@ -195,7 +195,7 @@ async function startMeetingRoom(rid) {
     addVideoTile('local', localStream, myName + ' (You)', true);
     updateGridLayout();
     updateParticipantsCount();
-    // Timer removed — meetings have unlimited duration
+    startRoomTimer();
     setConnStatus('Connecting to room...');
     initPeer(rid);
 }
@@ -447,67 +447,144 @@ const AVATAR_COLORS = [
     'linear-gradient(135deg,#10b981,#059669)',
     'linear-gradient(135deg,#f59e0b,#d97706)',
     'linear-gradient(135deg,#8b5cf6,#ec4899)',
+    'linear-gradient(135deg,#14b8a6,#0891b2)',
+    'linear-gradient(135deg,#f97316,#ef4444)',
 ];
 let colorIndex = 0;
 
+// Speaker detection via AudioContext (real-time volume monitoring)
+const audioAnalysers = {}; // peerId -> { analyser, interval }
+let speakerMuted = false;
+
+function startAudioMonitor(peerId, stream) {
+    try {
+        const ctx = new AudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.4;
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.fftSize);
+        let silentFrames = 0;
+
+        const interval = setInterval(() => {
+            analyser.getByteTimeDomainData(data);
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) {
+                sum += Math.abs(data[i] - 128);
+            }
+            const avg = sum / data.length;
+            const tile = document.getElementById('tile-' + peerId);
+            if (!tile) { clearInterval(interval); return; }
+            if (avg > 4) {
+                silentFrames = 0;
+                tile.classList.add('speaking');
+                updateSpeakBars(peerId, true);
+            } else {
+                silentFrames++;
+                if (silentFrames > 6) {
+                    tile.classList.remove('speaking');
+                    updateSpeakBars(peerId, false);
+                }
+            }
+        }, 80);
+        audioAnalysers[peerId] = { ctx, interval };
+    } catch(e) {
+        console.warn('Audio monitor failed:', e);
+    }
+}
+
+function stopAudioMonitor(peerId) {
+    if (audioAnalysers[peerId]) {
+        clearInterval(audioAnalysers[peerId].interval);
+        try { audioAnalysers[peerId].ctx.close(); } catch(e){}
+        delete audioAnalysers[peerId];
+    }
+}
+
+function updateSpeakBars(peerId, active) {
+    const tile = document.getElementById('tile-' + peerId);
+    if (!tile) return;
+    const bars = tile.querySelector('.speak-bars');
+    if (bars) bars.style.opacity = active ? '1' : '0';
+}
+
 function addVideoTile(id, stream, name, isLocal) {
     const grid = document.getElementById('video-grid');
+    if (document.getElementById('tile-' + id)) return;
+
     const tile = document.createElement('div');
     tile.className = 'video-tile';
     tile.id = 'tile-' + id;
 
     const color = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
     colorIndex++;
+    const initials = getInitials(name);
 
-    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const hasVideo = stream && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled;
 
     tile.innerHTML = `
-        <video autoplay ${isLocal ? 'muted' : ''} playsinline></video>
-        <div class="no-cam" style="display:none">
-            <div class="peer-avatar" style="background:${color}">${initials}</div>
-            <span style="font-size:0.8rem;color:var(--text-3)">${name}</span>
+        <video autoplay ${isLocal ? 'muted' : ''} playsinline style="display:${hasVideo ? 'block' : 'none'}"></video>
+
+        <div class="tile-no-cam" style="display:${hasVideo ? 'none' : 'flex'}">
+            <div class="tile-avatar" style="background:${color}">${initials}</div>
+            <div class="tile-avatar-name">${escapeHtml(name)}</div>
         </div>
-        <div class="tile-name">
-            ${name}
+
+        <div class="tile-footer">
+            <div class="tile-footer-left">
+                <div class="speak-bars" style="opacity:0">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <span class="tile-name-text">${escapeHtml(name)}${isLocal ? ' <em class="you-tag">You</em>' : ''}</span>
+            </div>
+            <div class="tile-footer-right">
+                <span class="tile-badge tile-muted-badge hidden" title="Muted"><i class="fa-solid fa-microphone-slash"></i></span>
+                <span class="tile-badge tile-novid-badge hidden" title="Camera off"><i class="fa-solid fa-video-slash"></i></span>
+            </div>
         </div>
     `;
 
     const video = tile.querySelector('video');
-    video.srcObject = stream;
+    if (stream) video.srcObject = stream;
 
-    // If video track is missing or off, show avatar
-    const videoTrack = stream.getVideoTracks()[0];
-    if (!videoTrack || !videoTrack.enabled) {
-        tile.querySelector('.no-cam').style.display = 'flex';
-        video.style.display = 'none';
-    }
-
-    // Speaking indicator (local only - for demo)
-    if (isLocal) {
-        tile.classList.add('speaking');
-        setTimeout(() => tile.classList.remove('speaking'), 3000);
-    }
+    // Show novid badge if camera off
+    if (!hasVideo) tile.querySelector('.tile-novid-badge').classList.remove('hidden');
 
     grid.appendChild(tile);
+    updateGridLayout();
     updateParticipantsCount();
+
+    // Start audio monitor for remotes
+    if (!isLocal && stream) {
+        startAudioMonitor(id, stream);
+    }
+
+    // Show join notification
+    if (!isLocal) {
+        showJoinNotification(name + ' joined the meeting');
+        showToast(name + ' joined', 'fa-user-plus');
+    }
 }
 
 function removePeerTile(peerId) {
+    stopAudioMonitor(peerId);
     const tile = document.getElementById('tile-' + peerId);
-    if (tile) tile.remove();
+    if (tile) {
+        tile.style.animation = 'tileLeave 0.3s ease forwards';
+        setTimeout(() => tile.remove(), 300);
+    }
     delete peerStreams[peerId];
     delete connections[peerId];
     delete peerNames[peerId];
     updateGridLayout();
     updateParticipantsCount();
-    const count = document.querySelectorAll('.video-tile').length;
-    setConnStatus(count + ' people in room', true);
 }
 
 function updateGridLayout() {
     const grid = document.getElementById('video-grid');
     const count = grid.querySelectorAll('.video-tile').length;
-    grid.className = 'video-grid count-' + Math.min(count, 6);
+    grid.className = 'video-grid count-' + Math.min(count, 9);
 }
 
 // ===== CONTROLS =====
@@ -517,9 +594,17 @@ function toggleMic() {
         localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     }
     const btn = document.getElementById('mic-btn');
-    btn.querySelector('i').className = micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash';
+    const icon = btn.querySelector('i');
+    icon.className = micOn ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash';
     btn.className = 'ctrl-btn ' + (micOn ? 'active' : 'off');
-    btn.querySelector('span').textContent = micOn ? 'Mic' : 'Muted';
+    btn.querySelector('span').textContent = micOn ? 'Mute' : 'Unmute';
+
+    // Update local tile muted badge
+    const localTile = document.getElementById('tile-local');
+    if (localTile) {
+        const badge = localTile.querySelector('.tile-muted-badge');
+        if (badge) badge.classList.toggle('hidden', micOn);
+    }
 }
 
 function toggleCam() {
@@ -528,15 +613,19 @@ function toggleCam() {
         localStream.getVideoTracks().forEach(t => t.enabled = camOn);
     }
     const btn = document.getElementById('cam-btn');
-    btn.querySelector('i').className = camOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash';
+    const icon = btn.querySelector('i');
+    icon.className = camOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash';
     btn.className = 'ctrl-btn ' + (camOn ? 'active' : 'off');
-    btn.querySelector('span').textContent = camOn ? 'Camera' : 'Off';
+    btn.querySelector('span').textContent = camOn ? 'Stop Video' : 'Start Video';
 
-    // Show/hide local avatar
     const localTile = document.getElementById('tile-local');
     if (localTile) {
-        localTile.querySelector('video').style.display = camOn ? 'block' : 'none';
-        localTile.querySelector('.no-cam').style.display = camOn ? 'none' : 'flex';
+        const vid = localTile.querySelector('video');
+        const noCam = localTile.querySelector('.tile-no-cam');
+        const novid = localTile.querySelector('.tile-novid-badge');
+        if (vid) vid.style.display = camOn ? 'block' : 'none';
+        if (noCam) noCam.style.display = camOn ? 'none' : 'flex';
+        if (novid) novid.classList.toggle('hidden', camOn);
     }
 }
 
@@ -550,7 +639,6 @@ async function toggleScreen() {
             btn.querySelector('span').textContent = 'Stop Share';
 
             const screenTrack = screenStream.getVideoTracks()[0];
-            // Replace video track in all connections
             Object.values(connections).forEach(call => {
                 if (call.peerConnection) {
                     const sender = call.peerConnection.getSenders().find(s => s.track?.kind === 'video');
@@ -558,13 +646,10 @@ async function toggleScreen() {
                 }
             });
 
-            // Update local tile to show screen
             const localVideo = document.querySelector('#tile-local video');
-            if (localVideo) {
-                localVideo.srcObject = screenStream;
-                localVideo.style.display = 'block';
-                document.querySelector('#tile-local .no-cam').style.display = 'none';
-            }
+            if (localVideo) { localVideo.srcObject = screenStream; localVideo.style.display = 'block'; }
+            const noCam = document.querySelector('#tile-local .tile-no-cam');
+            if (noCam) noCam.style.display = 'none';
 
             screenTrack.onended = () => stopScreenShare();
         } catch (e) {
@@ -579,14 +664,10 @@ function stopScreenShare() {
     screenSharing = false;
     const btn = document.getElementById('screen-btn');
     btn.classList.remove('active');
-    btn.querySelector('span').textContent = 'Share';
+    btn.querySelector('span').textContent = 'Share Screen';
 
-    if (screenStream) {
-        screenStream.getTracks().forEach(t => t.stop());
-        screenStream = null;
-    }
+    if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
 
-    // Restore camera
     if (localStream) {
         const camTrack = localStream.getVideoTracks()[0];
         if (camTrack) {
@@ -602,18 +683,45 @@ function stopScreenShare() {
     }
 }
 
+function toggleSpeaker() {
+    speakerMuted = !speakerMuted;
+    const btn = document.getElementById('speaker-btn');
+    const icon = btn.querySelector('i');
+    icon.className = speakerMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+    btn.className = 'ctrl-btn ' + (speakerMuted ? 'off' : 'active');
+    btn.querySelector('span').textContent = speakerMuted ? 'Speaker Off' : 'Speaker';
+
+    // Mute/unmute all remote video elements
+    document.querySelectorAll('.video-tile:not(#tile-local) video').forEach(v => {
+        v.muted = speakerMuted;
+    });
+    showToast(speakerMuted ? 'Speaker muted' : 'Speaker on', speakerMuted ? 'fa-volume-xmark' : 'fa-volume-high');
+}
+
 function toggleChat() {
     const panel = document.getElementById('chat-panel');
-    // Close participants if open
     const pPanel = document.getElementById('participants-panel');
-    if (pPanel) { pPanel.classList.add('hidden'); }
-    const pBtn = document.getElementById('participants-btn');
-    if (pBtn) pBtn.classList.remove('active');
+    if (pPanel) pPanel.classList.add('hidden');
+    document.getElementById('participants-btn').classList.remove('active');
 
     panel.classList.toggle('hidden');
     const btn = document.getElementById('chat-btn');
-    btn.classList.toggle('active', !panel.classList.contains('hidden'));
+    const isOpen = !panel.classList.contains('hidden');
+    btn.classList.toggle('active', isOpen);
+
+    // Clear unread badge when opened
+    if (isOpen) {
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) { badge.classList.add('hidden'); badge.textContent = ''; }
+        unreadCount = 0;
+        // Scroll to bottom
+        const msgs = document.getElementById('chat-messages');
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    }
 }
+
+let unreadCount = 0;
+let lastChatSender = '';
 
 function sendChat() {
     const input = document.getElementById('chat-input');
@@ -623,7 +731,6 @@ function sendChat() {
 
     displayChatMsg(myName, text, true);
 
-    // Broadcast to all peers via data channels
     const msg = JSON.stringify({ type: 'chat', name: myName, text });
     Object.values(dataConns).forEach(dc => {
         try { if (dc.open) dc.send(msg); } catch (e) {}
@@ -632,46 +739,81 @@ function sendChat() {
 
 function displayChatMsg(name, text, isMe) {
     const container = document.getElementById('chat-messages');
+    const panel = document.getElementById('chat-panel');
+
+    // Group messages by same sender
+    const isSameSender = lastChatSender === name;
+    lastChatSender = name;
+
     const div = document.createElement('div');
-    div.className = 'chat-msg ' + (isMe ? 'me' : '');
+    div.className = 'chat-msg-wrap' + (isMe ? ' me' : '');
+
+    const initials = getInitials(name);
+    const color = getAvatarColorForName(name);
+
     div.innerHTML = `
-        <div class="msg-bubble">${escapeHtml(text)}</div>
-        <div class="msg-meta">${isMe ? 'You' : escapeHtml(name)} · Just now</div>
+        ${!isSameSender ? `
+        <div class="chat-msg-header">
+            <div class="chat-avatar" style="background:${color}">${initials}</div>
+            <div class="chat-sender-info">
+                <span class="chat-sender-name">${isMe ? 'You' : escapeHtml(name)}</span>
+                <span class="chat-msg-time">${getTimeNow()}</span>
+            </div>
+        </div>` : ''}
+        <div class="chat-msg-body ${isMe ? 'me' : ''}">
+            ${isSameSender && !isMe ? '<div style="width:32px;flex-shrink:0"></div>' : ''}
+            <div class="msg-bubble ${isMe ? 'me' : ''}">${escapeHtml(text)}</div>
+        </div>
     `;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 
-    // Show chat panel briefly if hidden
-    const panel = document.getElementById('chat-panel');
+    // Unread badge when chat is closed
     if (panel.classList.contains('hidden') && !isMe) {
-        showToast(name + ': ' + text, 'fa-comment-dots');
+        unreadCount++;
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) {
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            badge.classList.remove('hidden');
+        }
+        showToast(name + ': ' + text.slice(0, 40), 'fa-comment-dots');
     }
 }
 
+function getAvatarColorForName(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function getTimeNow() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function endMeeting() {
     if (!confirm('Leave this meeting?')) return;
-
-    // Notify peers
     const msg = JSON.stringify({ type: 'peer-left', id: myPeerId });
-    Object.values(dataConns).forEach(dc => {
-        try { if (dc.open) dc.send(msg); } catch (e) {}
-    });
-
+    Object.values(dataConns).forEach(dc => { try { if (dc.open) dc.send(msg); } catch (e) {} });
     cleanupMeeting();
 }
 
 function cleanupMeeting() {
+    // Stop all audio monitors
+    Object.keys(audioAnalysers).forEach(stopAudioMonitor);
+
     if (localStream) localStream.getTracks().forEach(t => t.stop());
     if (screenStream) screenStream.getTracks().forEach(t => t.stop());
     if (peer) peer.destroy();
     if (timerInterval) clearInterval(timerInterval);
+    if (clockInterval) clearInterval(clockInterval);
 
     localStream = null; screenStream = null; peer = null; timerInterval = null;
     seconds = 0; micOn = true; camOn = true; screenSharing = false; handRaised = false;
+    unreadCount = 0; lastChatSender = ''; colorIndex = 0; speakerMuted = false;
 
     Object.keys(connections).forEach(k => delete connections[k]);
     Object.keys(peerStreams).forEach(k => delete peerStreams[k]);
@@ -680,20 +822,16 @@ function cleanupMeeting() {
 
     document.getElementById('video-grid').innerHTML = '';
     document.getElementById('chat-messages').innerHTML = '';
-    colorIndex = 0;
 
-    // Remove room from URL
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
     window.history.pushState({}, '', url.toString());
-
     navigate('dashboard');
 }
 
 // ===== PARTICIPANTS PANEL =====
 function toggleParticipants() {
     const panel = document.getElementById('participants-panel');
-    // Close chat if open
     const chatPanel = document.getElementById('chat-panel');
     chatPanel.classList.add('hidden');
     document.getElementById('chat-btn').classList.remove('active');
@@ -710,7 +848,6 @@ function updateParticipantsCount() {
     const panelCount = document.getElementById('participants-count-panel');
     if (badge) badge.textContent = total;
     if (panelCount) panelCount.textContent = total;
-    // Refresh list if panel is open
     const panel = document.getElementById('participants-panel');
     if (panel && !panel.classList.contains('hidden')) updateParticipantsList();
 }
@@ -720,36 +857,42 @@ function updateParticipantsList() {
     if (!list) return;
     list.innerHTML = '';
 
-    // Add myself first
-    const myItem = document.createElement('div');
-    myItem.className = 'participant-item';
-    myItem.innerHTML = `
-        <div class="participant-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">${getInitials(myName)}</div>
-        <span class="participant-name">${escapeHtml(myName)} <span class="you-tag">You</span></span>
-        ${handRaised ? '<span class="hand-badge">✋</span>' : ''}
-    `;
-    list.appendChild(myItem);
+    const allPeers = [
+        { id: 'local', name: myName, isSelf: true, handRaised: handRaised, micOn: micOn, camOn: camOn }
+    ];
+    Object.keys(peerNames).forEach(pid => {
+        const tile = document.getElementById('tile-' + pid);
+        const tileHandRaised = tile && tile.querySelector('.hand-indicator');
+        allPeers.push({ id: pid, name: peerNames[pid] || 'Guest', isSelf: false, handRaised: !!tileHandRaised });
+    });
 
-    // Add all connected peers
-    Object.keys(peerNames).forEach((pid, idx) => {
-        const name = peerNames[pid] || 'Guest';
-        const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+    allPeers.forEach(p => {
+        const color = getAvatarColorForName(p.name);
+        const initials = getInitials(p.name);
+        const tile = document.getElementById('tile-' + p.id);
+        const isSpeaking = tile && tile.classList.contains('speaking');
+
         const item = document.createElement('div');
-        item.className = 'participant-item';
-        item.id = 'plist-' + pid;
-        const handEl = document.getElementById('tile-' + pid);
-        const isHandRaised = handEl && handEl.querySelector('.hand-indicator');
+        item.className = 'participant-item' + (isSpeaking ? ' is-speaking' : '');
+        item.id = 'plist-' + p.id;
         item.innerHTML = `
-            <div class="participant-avatar" style="background:${color}">${getInitials(name)}</div>
-            <span class="participant-name">${escapeHtml(name)}</span>
-            ${isHandRaised ? '<span class="hand-badge">✋</span>' : ''}
+            <div class="participant-avatar-wrap">
+                <div class="participant-avatar" style="background:${color}">${initials}</div>
+                ${isSpeaking ? '<div class="participant-speak-ring"></div>' : ''}
+            </div>
+            <div class="participant-info">
+                <span class="participant-name">${escapeHtml(p.name)}${p.isSelf ? ' <em class="you-tag">You</em>' : ''}</span>
+                ${isSpeaking ? '<span class="participant-status speaking-status"><i class="fa-solid fa-microphone"></i> Speaking</span>' : ''}
+                ${p.handRaised && !isSpeaking ? '<span class="participant-status hand-status">✋ Hand raised</span>' : ''}
+            </div>
+            <div class="participant-icons">
+                ${p.isSelf && !micOn ? '<i class="fa-solid fa-microphone-slash" title="Muted"></i>' : ''}
+                ${p.isSelf && !camOn ? '<i class="fa-solid fa-video-slash" title="Camera off"></i>' : ''}
+                ${p.handRaised ? '<i class="fa-solid fa-hand" style="color:#f59e0b"></i>' : ''}
+            </div>
         `;
         list.appendChild(item);
     });
-}
-
-function getInitials(name) {
-    return (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
 // ===== HAND RAISE =====
@@ -757,8 +900,9 @@ function raiseHand() {
     handRaised = !handRaised;
     const btn = document.getElementById('hand-btn');
     btn.classList.toggle('active', handRaised);
-    btn.querySelector('i').style.color = handRaised ? 'var(--amber)' : '';
+    btn.classList.toggle('hand-raised', handRaised);
     btn.querySelector('span').textContent = handRaised ? 'Lower Hand' : 'Raise Hand';
+    btn.querySelector('i').style.color = handRaised ? '#f59e0b' : '';
 
     updateHandIndicator('local', handRaised);
 
@@ -777,13 +921,49 @@ function updateHandIndicator(tileId, raised) {
         if (!indicator) {
             indicator = document.createElement('div');
             indicator.className = 'hand-indicator';
-            indicator.textContent = '✋';
+            indicator.innerHTML = '✋';
             tile.appendChild(indicator);
         }
     } else {
         if (indicator) indicator.remove();
     }
+    updateParticipantsList();
 }
+
+// ===== JOIN NOTIFICATION =====
+function showJoinNotification(msg) {
+    const el = document.getElementById('join-notification');
+    if (!el) return;
+    el.innerHTML = `<i class="fa-solid fa-user-plus"></i> ${escapeHtml(msg)}`;
+    el.classList.remove('hidden');
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+// ===== ROOM TIMER =====
+let clockInterval = null;
+
+function startRoomTimer() {
+    seconds = 0;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        const el = document.getElementById('room-timer-badge');
+        if (el) el.textContent = m + ':' + s;
+    }, 1000);
+
+    // Bottom bar clock
+    if (clockInterval) clearInterval(clockInterval);
+    const updateClock = () => {
+        const el = document.getElementById('ctrl-clock');
+        if (el) el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    updateClock();
+    clockInterval = setInterval(updateClock, 10000);
+}
+
 
 // ===== DEVICE SETTINGS =====
 async function openDeviceSettings() {

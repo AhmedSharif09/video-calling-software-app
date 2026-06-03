@@ -435,6 +435,8 @@
 
     <!-- ===== MEETING ROOM ===== -->
     <div id="meeting-room" class="page hidden meeting-room-layout">
+
+        <!-- TOP BAR -->
         <div class="room-topbar">
             <div class="room-info">
                 <div class="room-live-dot"></div>
@@ -442,14 +444,16 @@
                 <div class="room-id-badge" id="room-id-display"></div>
             </div>
             <div class="room-center">
-                <div class="participants-count-badge" id="participants-count-badge" onclick="toggleParticipants()" title="View participants">
+                <div class="participants-count-badge" id="participants-count-badge"
+                    onclick="toggleParticipants()" title="View participants">
                     <i class="fa-solid fa-users"></i>
-                    <span id="participants-count">1</span> Students
+                    <span id="participants-count">1</span> Participants
                 </div>
+                <div class="room-timer-badge" id="room-timer-badge">00:00</div>
             </div>
             <div class="room-actions-top">
                 <button onclick="copyCurrentRoomLink()" class="room-btn-sm" title="Copy meeting link">
-                    <i class="fa-solid fa-link"></i> Copy Link
+                    <i class="fa-solid fa-link"></i><span> Copy Link</span>
                 </button>
                 <button onclick="endMeeting()" class="end-call-btn">
                     <i class="fa-solid fa-phone-slash"></i> End Call
@@ -457,80 +461,98 @@
             </div>
         </div>
 
+        <!-- BODY -->
         <div class="room-body">
+            <!-- VIDEO GRID -->
             <div id="video-grid" class="video-grid"></div>
 
-            <div id="chat-panel" class="chat-panel hidden">
-                <div class="chat-header">
-                    <span>Meeting Chat</span>
-                    <button onclick="toggleChat()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div id="chat-messages" class="chat-messages"></div>
-                <div class="chat-input-area">
-                    <input id="chat-input" type="text" placeholder="Message..."
-                        onkeypress="if(event.key==='Enter')sendChat()">
-                    <button onclick="sendChat()" class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
-            </div>
-
-            <!-- Participants Panel -->
-            <div id="participants-panel" class="participants-panel hidden">
-                <div class="chat-header">
-                    <span>Students (<span id="participants-count-panel">1</span>)</span>
-                    <button onclick="toggleParticipants()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            <!-- PARTICIPANTS PANEL -->
+            <div id="participants-panel" class="side-panel hidden">
+                <div class="panel-header">
+                    <span><i class="fa-solid fa-users"></i> Participants (<span id="participants-count-panel">1</span>)</span>
+                    <button onclick="toggleParticipants()" class="panel-close-btn"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div id="participants-list" class="participants-list"></div>
             </div>
+
+            <!-- CHAT PANEL -->
+            <div id="chat-panel" class="side-panel hidden">
+                <div class="panel-header">
+                    <span><i class="fa-regular fa-comment-dots"></i> Meeting Chat</span>
+                    <button onclick="toggleChat()" class="panel-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-area">
+                    <input id="chat-input" type="text" placeholder="Send a message to everyone..."
+                        onkeypress="if(event.key==='Enter')sendChat()">
+                    <button onclick="sendChat()" class="chat-send-btn" title="Send">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
+        <!-- BOTTOM CONTROLS -->
         <div class="room-controls">
+            <div class="ctrl-time" id="ctrl-clock"></div>
+
             <div class="controls-group">
-                <button id="mic-btn" onclick="toggleMic()" class="ctrl-btn active" title="Toggle Microphone">
-                    <i class="fa-solid fa-microphone"></i>
-                    <span>Mic</span>
+                <button id="mic-btn" onclick="toggleMic()" class="ctrl-btn active" title="Mute/Unmute">
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-microphone"></i></div>
+                    <span>Mute</span>
                 </button>
-                <button id="cam-btn" onclick="toggleCam()" class="ctrl-btn active" title="Toggle Camera">
-                    <i class="fa-solid fa-video"></i>
-                    <span>Camera</span>
+                <button id="cam-btn" onclick="toggleCam()" class="ctrl-btn active" title="Start/Stop Video">
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-video"></i></div>
+                    <span>Stop Video</span>
                 </button>
+                <div class="ctrl-separator"></div>
                 <button id="screen-btn" onclick="toggleScreen()" class="ctrl-btn" title="Share Screen">
-                    <i class="fa-solid fa-desktop"></i>
-                    <span>Share</span>
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-desktop"></i></div>
+                    <span>Share Screen</span>
                 </button>
                 <button id="chat-btn" onclick="toggleChat()" class="ctrl-btn" title="Chat">
-                    <i class="fa-solid fa-comment-dots"></i>
+                    <div class="ctrl-icon-wrap">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span class="chat-unread-badge hidden" id="chat-unread-badge"></span>
+                    </div>
                     <span>Chat</span>
                 </button>
-                <button id="participants-btn" onclick="toggleParticipants()" class="ctrl-btn" title="Students">
-                    <i class="fa-solid fa-users"></i>
-                    <span>Students</span>
+                <button id="participants-btn" onclick="toggleParticipants()" class="ctrl-btn" title="Participants">
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-users"></i></div>
+                    <span>Participants</span>
                 </button>
                 <button id="hand-btn" onclick="raiseHand()" class="ctrl-btn" title="Raise Hand">
-                    <i class="fa-solid fa-hand"></i>
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-hand"></i></div>
                     <span>Raise Hand</span>
                 </button>
+                <div class="ctrl-separator"></div>
                 <button id="speaker-btn" onclick="toggleSpeaker()" class="ctrl-btn active" title="Toggle Speaker">
-                    <i class="fa-solid fa-volume-high"></i>
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-volume-high"></i></div>
                     <span>Speaker</span>
                 </button>
-                <button id="settings-btn" onclick="openDeviceSettings()" class="ctrl-btn" title="Device Settings">
-                    <i class="fa-solid fa-sliders"></i>
+                <button id="settings-btn" onclick="openDeviceSettings()" class="ctrl-btn" title="Settings">
+                    <div class="ctrl-icon-wrap"><i class="fa-solid fa-sliders"></i></div>
                     <span>Settings</span>
                 </button>
             </div>
-            <button onclick="endMeeting()" class="ctrl-end">
+
+            <button onclick="endMeeting()" class="ctrl-leave-btn">
                 <i class="fa-solid fa-phone-slash"></i>
-                <span>Leave</span>
+                Leave
             </button>
         </div>
 
+        <!-- Join notification -->
+        <div id="join-notification" class="join-notification hidden"></div>
+
         <!-- Connection Status -->
-        <div id="conn-status" class="conn-status">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Connecting peers...
+        <div id="conn-status" class="conn-status hidden">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Connecting...
         </div>
     </div>
 
-    <!-- ===== AUTH PAGES ===== -->
+
+        <!-- ===== AUTH PAGES ===== -->
     <!-- ===== LOGIN PAGE ===== -->
     <div id="login" class="page hidden auth-page">
         <div class="auth-card">
